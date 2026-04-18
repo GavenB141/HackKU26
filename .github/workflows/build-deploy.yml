@@ -24,17 +24,15 @@ jobs:
           git clone https://github.com/raysan5/raylib.git
           cd raylib/src
           emmake make PLATFORM=PLATFORM_WEB
-          cp -v libraylib.web.a libraylib.a
 
       - name: Build game
-        working-directory: game
         run: |
-          emmake make EXTRA_INC=-I../raylib/src/ EXTRA_LIB="-L../raylib/src/ -s USE_GLFW=3 -s USE_WEBGL2=1 -s ASYNCIFY -s ALLOW_MEMORY_GROWTH" OUTPUT=index.html
+          mkdir -pv site
+          make -C game web RAYLIB=../raylib/src/
 
       - name: Prepare site
         run: |
-          mkdir -p site
-          cp -rv game/*.{html,js,wasm} site/ || true
+          cp -v public/* site/ || true
           touch site/.nojekyll
 
       - name: Upload Pages artifact

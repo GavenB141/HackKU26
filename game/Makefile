@@ -30,6 +30,17 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@$(CC) $(FFLAGS) -c $< -o $@ -I$(INCDIR) $(EXTRA_INC)
 
 # -----------------------------------------------------------------------------
+#  DEPLOY
+# -----------------------------------------------------------------------------
+
+web:
+	emcc -Wall -Os -o ../site/index.html $(SOURCES) -I$(INCDIR) \
+		-lm \
+		$(RAYLIB)/libraylib.web.a -I$(RAYLIB) -L$(RAYLIB)/libraylib.web.a \
+		-s USE_GLFW=3 -s ASYNCIFY -DPLATFORM_WEB --preload-file assets -DGRAPHICS_API_OPENGL_100 \
+		--shell-file html/index.html
+
+# -----------------------------------------------------------------------------
 #  MAINTENANCE
 # -----------------------------------------------------------------------------
 
