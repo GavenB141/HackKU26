@@ -1,6 +1,9 @@
+#include "player.h"
 #include "tiles.h"
+#include "dungeon.h"
 #include <raylib.h>
 #include <raymath.h>
+#include <stdio.h>
 
 static const Vector2 canvas_size = {240, 160};
 static RenderTexture canvas;
@@ -28,35 +31,73 @@ void generic_white_draw(Texture texture, Rectangle target, unsigned char neighbo
     DrawRectangleRec(target, RAYWHITE);
 }
 
+static Camera2D camera = {
+    {canvas_size.x / 2, canvas_size.y / 2},
+    {canvas_size.x / 2, canvas_size.y / 2},
+    0, 1
+};
+static void update_camera(const Dungeon* dungeon, float dt) {
+    Rectangle bounds = dungeon_room_bounds(dungeon);
+    Vector2 target = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
+    camera.target = Vector2MoveTowards(camera.target, target, dt * 1000);
+    fprintf(stdout, "%f %f\n", bounds.x, target.y);
+}
+
 int main () {
-    InitWindow(canvas_size.x, canvas_size.y, "HackKU 2026");
+    InitWindow(canvas_size.x * 3, canvas_size.y * 3, "HackKU 2026");
     SetTargetFPS(144);
     SetWindowMinSize(canvas_size.x, canvas_size.y);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 
     canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
 
-    TileMap* map = make_tilemap(
-        15, 10, 
+    TileRenderer* renderer = make_tile_renderer(16, 16);
+    register_tile_type(renderer, '#', (TileDrawBehavior){(Texture){0}, generic_gray_draw});
+    register_tile_type(renderer, '.', (TileDrawBehavior){(Texture){0}, generic_white_draw});
+    Dungeon* dungeon = make_dungeon(renderer);
+
+    add_dungeon_room(
+        dungeon, 0, 0, 15, 10,
         "###############"
         "#.....#.......#"
         "#.....#.......#"
         "#....#####....#"
-        "#....#........#"
-        "#........#....#"
+        "#....#........."
+        "#........#....."
         "#....#####....#"
         "#.......#.....#"
         "#.......#.....#"
         "###############"
     );
-    TileRenderer* renderer = make_tile_renderer(16, 16);
-    register_tile_type(renderer, '#', (TileDrawBehavior){(Texture){0}, generic_gray_draw});
-    register_tile_type(renderer, '.', (TileDrawBehavior){(Texture){0}, generic_white_draw});
 
+    add_dungeon_room(
+        dungeon, 15, 0, 15, 10,
+        "###############"
+        "#.............#"
+        "#.............#"
+        "#.............#"
+        "..............#"
+        "..............#"
+        "#.............#"
+        "#.............#"
+        "#.............#"
+        "###############"
+    );
+
+    Player player = {24,24,12,12};
+    
     while (!WindowShouldClose()) {
+        float dt = GetFrameTime();
+
+        update_player(&player, dungeon, dt);
+        update_camera(dungeon, dt);
+        
         BeginTextureMode(canvas);
         ClearBackground(DARKGRAY);
-        draw_tilemap(map, renderer, Vector2Zero());
+        BeginMode2D(camera);
+        draw_dungeon(dungeon, dt);
+        draw_player(&player);
+        EndMode2D();
         EndTextureMode();
 
         BeginDrawing();
@@ -66,8 +107,10 @@ int main () {
     }
 
     delete_tile_renderer(renderer);
-    delete_tilemap(map);
+    delete_dungeon(dungeon);
 
     UnloadRenderTexture(canvas);
     CloseWindow();
 }
+
+
