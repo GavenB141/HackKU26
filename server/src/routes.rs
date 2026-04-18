@@ -1,5 +1,5 @@
 use axum::{extract::Path, response::IntoResponse};
-use dungeon_gen::{TileKind, layout::CELL_SIZE};
+use dungeon_gen::{RoomContent, RoomKind, TileKind, layout::CELL_SIZE};
 use tracing::trace;
 
 pub async fn post_new() -> impl IntoResponse {}
@@ -40,6 +40,48 @@ pub async fn generate_dungeon_from_seed(Path(seed): Path<u64>) -> impl IntoRespo
                 });
             }
             s.push('\n');
+        }
+        match &dungeon.tree.rooms[room.room_id].kind {
+            RoomKind::Normal => {}
+            RoomKind::Key { key_id } => {
+                s.push_str(&format!("key : {key_id}\n"));
+            }
+            RoomKind::Locked { key_id } => {
+                s.push_str(&format!("locked : {key_id}\n"));
+            }
+            RoomKind::Switch | RoomKind::SwitchDoor => {
+                /* do nothing; this information is handled by room content */
+            }
+        }
+        let RoomContent {
+            enemies,
+            switch,
+            switch_door,
+            sign,
+            is_exit: _, // exit state is revealed by having an exit
+        } = &dungeon.content[room.room_id];
+        if let Some(enemies) = enemies {
+            if enemies.is_boss {
+                s.push_str("boss\n");
+            }
+            s.push_str(&format!("enemies {}\n", enemies.count));
+        }
+        if let Some(switch) = switch {
+            s.push_str(&format!("switch {} :", switch.switch_id));
+            for signal in &switch.signals {
+                s.push_str(&format!(" {}", signal));
+            }
+            s.push('\n');
+        }
+        if let Some(switch_door) = switch_door {
+            s.push_str(&format!("door {} :", switch_door.door_id));
+            for signal in &switch_door.signals {
+                s.push_str(&format!(" {}", signal));
+            }
+            s.push('\n');
+        }
+        if let Some(sign) = sign {
+            s.push_str(&format!("sign {}\n", sign.text));
         }
         s.push('\n');
     }

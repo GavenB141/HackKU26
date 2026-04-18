@@ -312,6 +312,7 @@ fn build_room(
     // ── 3. Cut doors for each grid neighbour ──────────────────────────────
     let neighbours_grid = grid.neighbours(room_id);
     let room_kind = tree.rooms[room_id].kind;
+    let parent_id_opt = tree.parent_of(room_id);
 
     // Determine which cardinal directions have neighbours
     for &nb_id in &neighbours_grid {
@@ -327,27 +328,36 @@ fn build_room(
             _ => continue,
         };
 
-        // Door kind: the *neighbour* room's kind determines lock type
-        // (locked door is between child and parent; child has the kind)
-        let nb_kind = tree.rooms[nb_id].kind;
-        let door_tile = door_tile_kind(nb_kind, tree.rooms[room_id].kind);
+        // Special door kinds (LockedDoor, SwitchDoor) only apply to
+        // tree parent-child connections, not cross-branch grid adjacencies.
+        let door_tile = if Some(nb_id) == parent_id_opt {
+            // nb_id is this room's parent; this room is the child.
+            door_tile_kind(room_kind, tree.rooms[nb_id].kind)
+        } else if tree.rooms[room_id].children.contains(&nb_id) {
+            // nb_id is a tree child of this room.
+            door_tile_kind(tree.rooms[nb_id].kind, room_kind)
+        } else {
+            // Cross-branch grid adjacency: no tree relationship, plain door.
+            TileKind::Door
+        };
         tiles[dr * CELL_SIZE + dc] = door_tile;
     }
-    // Also check if this room has a parent (may have a door on the parent side)
-    if let Some(parent_id) = tree.parent_of(room_id) {
-        if let Some(parent_pos) = grid.pos_of(parent_id) {
-            let dx = parent_pos.0 - grid_pos.0;
-            let dy = parent_pos.1 - grid_pos.1;
-            let (dc, dr) = match (dx, dy) {
-                (1, 0) => DOOR_EAST,
-                (-1, 0) => DOOR_WEST,
-                (0, 1) => DOOR_SOUTH,
-                (0, -1) => DOOR_NORTH,
-                _ => (usize::MAX, usize::MAX),
-            };
-            if dc != usize::MAX {
-                let door_tile = door_tile_kind(room_kind, RoomKind::Normal);
-                if tiles[dr * CELL_SIZE + dc] == TileKind::Wall {
+    // Fallback: if the parent is placed but not a cardinal grid neighbour,
+    // ensure a door still appears on that wall.
+    if let Some(parent_id) = parent_id_opt {
+        if !neighbours_grid.contains(&parent_id) {
+            if let Some(parent_pos) = grid.pos_of(parent_id) {
+                let dx = parent_pos.0 - grid_pos.0;
+                let dy = parent_pos.1 - grid_pos.1;
+                let (dc, dr) = match (dx, dy) {
+                    (1, 0) => DOOR_EAST,
+                    (-1, 0) => DOOR_WEST,
+                    (0, 1) => DOOR_SOUTH,
+                    (0, -1) => DOOR_NORTH,
+                    _ => (usize::MAX, usize::MAX),
+                };
+                if dc != usize::MAX {
+                    let door_tile = door_tile_kind(room_kind, tree.rooms[parent_id].kind);
                     tiles[dr * CELL_SIZE + dc] = door_tile;
                 }
             }

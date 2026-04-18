@@ -700,6 +700,50 @@ mod layout_tests {
         }
     }
 
+    /// The tile kind must be identical on both sides of every connection.
+    ///
+    /// A wall between rooms A and B carries exactly one door (or no door);
+    /// whichever tile kind is chosen, both A's wall and B's mirror wall must
+    /// agree.  Failures here indicate that the door-kind selection logic uses
+    /// different rules depending on which room is being built, producing an
+    /// asymmetric pair such as (SwitchDoor, Door) or (LockedDoor, Door).
+    #[test]
+    fn door_tile_kinds_match_between_adjacent_rooms() {
+        for seed in 0u64..50 {
+            let d = gen(seed);
+            for tr in &d.tile_map.rooms {
+                let grid_pos = d.grid.pos_of(tr.room_id).unwrap();
+                for nb_id in d.grid.neighbours(tr.room_id) {
+                    let nb_pos = d.grid.pos_of(nb_id).unwrap();
+                    let dx = nb_pos.0 - grid_pos.0;
+                    let dy = nb_pos.1 - grid_pos.1;
+                    let (my_dc, my_dr, nb_dc, nb_dr) = match (dx, dy) {
+                        (1, 0) => (10usize, 5usize, 0usize, 5usize),
+                        (-1, 0) => (0, 5, 10, 5),
+                        (0, 1) => (5, 10, 5, 0),
+                        (0, -1) => (5, 0, 5, 10),
+                        _ => continue,
+                    };
+                    let my_tile = tr.get(my_dc, my_dr);
+                    let nb_tile = d.tile_map.room_for(nb_id).unwrap().get(nb_dc, nb_dr);
+                    assert_eq!(
+                        my_tile,
+                        nb_tile,
+                        "Door kind mismatch between rooms {} ({:?}) and {} ({:?}): \
+                         {:?} vs {:?} (seed {})",
+                        tr.room_id,
+                        d.tree.rooms[tr.room_id].kind,
+                        nb_id,
+                        d.tree.rooms[nb_id].kind,
+                        my_tile,
+                        nb_tile,
+                        seed
+                    );
+                }
+            }
+        }
+    }
+
     // ── Content placement ────────────────────────────────────────────────
 
     #[test]
@@ -863,6 +907,153 @@ mod layout_tests {
                 "Room {} world_origin mismatch",
                 tr.room_id
             );
+        }
+    }
+
+    // ── Locked / SwitchDoor tile correctness ─────────────────────────────
+
+    /// A Locked room's tile on the wall facing its tree parent must be
+    /// `LockedDoor`, not a plain `Door`.  This is the regression test for the
+    /// bug where the neighbour loop used the parent's (Normal) kind instead of
+    /// the child's (Locked) kind when setting that wall tile.
+    #[test]
+    fn locked_room_has_locked_door_toward_parent() {
+        let placed_any = std::cell::Cell::new(false);
+        for seed in 0u64..50 {
+            let d = gen(seed);
+            let placed: HashSet<usize> = d.grid.placed_room_ids().into_iter().collect();
+            for room in &d.tree.rooms {
+                if !placed.contains(&room.id) || !room.kind.is_locked() {
+                    continue;
+                }
+                let Some(parent_id) = d.tree.parent_of(room.id) else {
+                    continue;
+                };
+                if !placed.contains(&parent_id) {
+                    continue;
+                }
+                let room_pos = d.grid.pos_of(room.id).unwrap();
+                let parent_pos = d.grid.pos_of(parent_id).unwrap();
+                let dx = parent_pos.0 - room_pos.0;
+                let dy = parent_pos.1 - room_pos.1;
+                let (dc, dr) = match (dx, dy) {
+                    (1, 0) => (10usize, 5usize),
+                    (-1, 0) => (0, 5),
+                    (0, 1) => (5, 10),
+                    (0, -1) => (5, 0),
+                    _ => continue,
+                };
+                placed_any.set(true);
+                let tr = d.tile_map.room_for(room.id).unwrap();
+                let tile = tr.get(dc, dr);
+                assert_eq!(
+                    tile,
+                    TileKind::LockedDoor,
+                    "Locked room {} toward parent {}: expected LockedDoor, got {:?} (seed {})",
+                    room.id,
+                    parent_id,
+                    tile,
+                    seed
+                );
+            }
+        }
+        assert!(placed_any.get(), "No placed Locked rooms found across 50 seeds");
+    }
+
+    /// Both sides of a parent↔Locked-child passage must show `LockedDoor`.
+    #[test]
+    fn locked_door_tiles_are_symmetric() {
+        for seed in 0u64..50 {
+            let d = gen(seed);
+            let placed: HashSet<usize> = d.grid.placed_room_ids().into_iter().collect();
+            for room in &d.tree.rooms {
+                if !placed.contains(&room.id) || !room.kind.is_locked() {
+                    continue;
+                }
+                let Some(parent_id) = d.tree.parent_of(room.id) else {
+                    continue;
+                };
+                if !placed.contains(&parent_id) {
+                    continue;
+                }
+                let room_pos = d.grid.pos_of(room.id).unwrap();
+                let parent_pos = d.grid.pos_of(parent_id).unwrap();
+                let dx = parent_pos.0 - room_pos.0;
+                let dy = parent_pos.1 - room_pos.1;
+                let (child_dc, child_dr, par_dc, par_dr) = match (dx, dy) {
+                    (1, 0) => (10usize, 5usize, 0usize, 5usize),
+                    (-1, 0) => (0, 5, 10, 5),
+                    (0, 1) => (5, 10, 5, 0),
+                    (0, -1) => (5, 0, 5, 10),
+                    _ => continue,
+                };
+                let child_tile = d.tile_map.room_for(room.id).unwrap().get(child_dc, child_dr);
+                let par_tile = d
+                    .tile_map
+                    .room_for(parent_id)
+                    .unwrap()
+                    .get(par_dc, par_dr);
+                assert_eq!(
+                    child_tile,
+                    TileKind::LockedDoor,
+                    "Locked room {} child-side tile should be LockedDoor, got {:?} (seed {})",
+                    room.id,
+                    child_tile,
+                    seed
+                );
+                assert_eq!(
+                    par_tile,
+                    TileKind::LockedDoor,
+                    "Parent {} toward Locked child {}: expected LockedDoor, got {:?} (seed {})",
+                    parent_id,
+                    room.id,
+                    par_tile,
+                    seed
+                );
+            }
+        }
+    }
+
+    /// A `RoomKind::SwitchDoor` room's tile on the wall facing its tree parent
+    /// must be `TileKind::SwitchDoor`.
+    #[test]
+    fn switch_door_room_has_switch_door_toward_parent() {
+        for seed in 0u64..50 {
+            let d = gen(seed);
+            let placed: HashSet<usize> = d.grid.placed_room_ids().into_iter().collect();
+            for room in &d.tree.rooms {
+                if !placed.contains(&room.id) || !room.kind.is_switch_door() {
+                    continue;
+                }
+                let Some(parent_id) = d.tree.parent_of(room.id) else {
+                    continue;
+                };
+                if !placed.contains(&parent_id) {
+                    continue;
+                }
+                let room_pos = d.grid.pos_of(room.id).unwrap();
+                let parent_pos = d.grid.pos_of(parent_id).unwrap();
+                let dx = parent_pos.0 - room_pos.0;
+                let dy = parent_pos.1 - room_pos.1;
+                let (dc, dr) = match (dx, dy) {
+                    (1, 0) => (10usize, 5usize),
+                    (-1, 0) => (0, 5),
+                    (0, 1) => (5, 10),
+                    (0, -1) => (5, 0),
+                    _ => continue,
+                };
+                let tr = d.tile_map.room_for(room.id).unwrap();
+                let tile = tr.get(dc, dr);
+                assert_eq!(
+                    tile,
+                    TileKind::SwitchDoor,
+                    "SwitchDoor room {} toward parent {}: expected SwitchDoor, got {:?} (seed {})",
+                    room.id,
+                    parent_id,
+                    tile,
+                    seed
+                );
+            }
         }
     }
 
