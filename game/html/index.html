@@ -144,6 +144,9 @@
                 if (!text) spinnerElement.hidden = true;
             }
             statusElement.innerHTML = text;
+
+            // HACK: not sure why it doesn't re-scale on its own until load finished, but this makes it work
+            window.dispatchEvent(new Event("resize"));
         }
 
         #if MODULARIZE && !EXPORT_ES6
