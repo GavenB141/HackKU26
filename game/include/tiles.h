@@ -18,7 +18,10 @@ struct TileDrawBehavior {
     void (*callback)(
         Texture tex,
         Rectangle target,
-        unsigned char neighbor_bits);
+        const TileMap* map,
+        int x,
+        int y
+    );
 };
 
 struct TileMap {
@@ -30,7 +33,6 @@ struct TileRenderer {
     TileDrawBehavior draw_rules[128];
     int tile_width, tile_height;
 };
-
 
 TileMap* make_tilemap(int width, int height, const char* layout);
 TileRenderer* make_tile_renderer(int tile_width, int tile_height);
@@ -44,7 +46,8 @@ void register_tile_type(
     void (*callback)(
         Texture tex,
         Rectangle target,
-        unsigned char neighbor_bits
+        const TileMap* map,
+        int x, int y
     )
 );
 

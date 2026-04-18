@@ -41,8 +41,7 @@ void draw_tilemap(const TileMap* map, const TileRenderer* rdr, Vector2 offset) {
             const Tile tile = get_tile(map, x, y);
             const TileDrawBehavior* behavior = &rdr->draw_rules[tile.type];
             if (behavior->callback) {
-                behavior->callback(
-                    behavior->texture, target, get_neighbor_bits(map, tile.type, x, y));
+                behavior->callback(behavior->texture, target, map, x, y);
             }
         }
     }
@@ -54,8 +53,13 @@ TileMap* make_tilemap(int width, int height, const char* layout) {
     tm->width = width;
     tm->height = height;
 
-    for (int i = 0; i < width * height && layout[i]; i++) {
-        tm->map[i].type = layout[i];
+    for (int i = 0; i < width * height && *layout; i++, layout++) {
+        if (*layout == '\n') {
+            i--;
+            continue;
+        }
+
+        tm->map[i].type = *layout;
     }
 
     return tm;
@@ -84,7 +88,8 @@ void register_tile_type(
     void (*callback)(
         Texture tex,
         Rectangle target,
-        unsigned char neighbor_bits
+        const TileMap* map,
+        int x, int y
     )
 ) {
     assert(symbol > 0);

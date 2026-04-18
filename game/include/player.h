@@ -14,6 +14,8 @@ struct Player {
             Vector2 size;
         };
     } body;
+    Vector2 dash_velocity;
+    float dash_time;
 };
 
 void draw_player(Player* player);

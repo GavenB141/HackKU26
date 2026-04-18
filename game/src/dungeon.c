@@ -3,27 +3,8 @@
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "dungeon.h"
-
-struct DungeonRoom {
-    TileMap* map;
-    int origin_x, origin_y;
-};
-
-struct Dungeon {
-    TileRenderer* renderer;
-    DungeonRoom* rooms;
-    int num_rooms;
-    int active_room;
-
-    char signals[128];
-
-    // for animating
-    int previous_room;
-    float transition_progress;
-};
 
 static DungeonCollisionResult compute_tile_range(
     const DungeonRoom* room,
@@ -137,6 +118,20 @@ void add_dungeon_room(
     new_room->origin_x = origin_x;
     new_room->origin_y = origin_y;
     new_room->map = make_tilemap(width, height, layout);
+
+    for (int i = 0; *layout; i++, layout++) {
+        if (*layout == '\n') {
+            i--;
+            continue;
+        }
+
+        if (*layout == '@') {
+            dungeon->spawn_point = (Vector2){
+                (origin_x + i % width) * dungeon->renderer->tile_width,
+                (origin_y + (int)(i / width)) * dungeon->renderer->tile_height
+            };
+        }
+    }
 }
 
 static Rectangle get_room_bounds(const Dungeon* dungeon, int room_id) {
@@ -206,9 +201,13 @@ void dungeon_focus(Dungeon* dungeon, Vector2 position) {
 }
 
 static void draw_wall_tile(
-    Texture texture, Rectangle target, unsigned char neighbor_bits
+    Texture texture,
+    Rectangle target,
+    const TileMap* map,
+    int x, int y
 ) {
     Vector2 selection = {-1, -1};
+    unsigned char neighbor_bits = get_neighbor_bits(map, '#', x, y);
 
     if (neighbor_bits == 255) {
         selection = (Vector2){1,1};
@@ -299,21 +298,78 @@ static void draw_wall_tile(
     );
 }
 
-static void draw_floor_tile(Texture texture, Rectangle target, unsigned char _) {
+static void draw_floor_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {16, 96, 16, 16};
 
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
-Dungeon* make_dungeon() {
+static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {32, 0, 16, 16};
+
+    unsigned char wall_bits = get_neighbor_bits(map, '#', x, y);
+    
+    if ((wall_bits & 0b00011000) == 0b00011000) {
+        src.x = 16;
+    }
+
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
+
+static void draw_chest_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {64, 0, 16, 16};
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
+
+Dungeon* make_empty_dungeon() {
     Dungeon* dungeon = calloc(1, sizeof(Dungeon));
     TileRenderer* renderer = make_tile_renderer(16, 16);
 
     Texture wall_texture = LoadTexture("assets/map_tiles.png");
     register_tile_type(renderer, '#', wall_texture, draw_wall_tile);
     register_tile_type(renderer, '.', wall_texture, draw_floor_tile);
+    register_tile_type(renderer, '@', wall_texture, draw_floor_tile);
+
+    Texture item_texture = LoadTexture("assets/item_tiles.png");
+    register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
+    register_tile_type(renderer, 'k', item_texture, draw_chest_tile);
 
     dungeon->renderer = renderer;
     return dungeon;
 }
 
+Dungeon* parse_dungeon(const char* text) {
+    Dungeon* dungeon = make_empty_dungeon();
+    int x = 0, y = 0;
+    
+    enum ParseStage {
+        PARSE_X, PARSE_Y, PARSE_ROOM, PARSE_META
+    } stage = PARSE_Y;
+
+    for (; *text; text++) {
+        if (stage == PARSE_X) {
+            if (*text == '\n') {
+                stage = PARSE_ROOM;
+            } else if (*text >= '0' && *text <= '9') {
+                x = x * 10 + (*text - '0');
+            }
+        } else if (stage == PARSE_Y) {
+            if (*text == '\n') {
+                stage = PARSE_X;
+            } else if (*text >= '0' && *text <= '9') {
+                y = y * 10 + (*text - '0');
+            }
+        } else if (stage == PARSE_ROOM) {
+            add_dungeon_room(dungeon, x * 11, y * 11, 11, 11, text);
+            x = 0;
+            y = 0;
+            text += 11 * 11; // saves time
+            stage = PARSE_META;
+        } else if (stage == PARSE_META) {
+            if (text[-1] == '\n' && *text == '\n') {
+                stage = PARSE_Y;
+            }
+        }
+    }
+    return dungeon;
+}

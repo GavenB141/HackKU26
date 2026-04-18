@@ -49,54 +49,12 @@ int main () {
 
     canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
 
-    Dungeon* dungeon = make_dungeon();
+    char* dungeon_text = LoadFileText("assets/sample_dungeon.txt");
+    Dungeon* dungeon = parse_dungeon(dungeon_text);
+    UnloadFileText(dungeon_text);
 
-    add_dungeon_room(
-        dungeon, 0, 0, 11, 11,
-        "###########"
-        "#....#....#"
-        "#....#....#"
-        "#...####..#"
-        "#...#......"
-        "#......#..."
-        "#...####..#"
-        "#.....#...#"
-        "#.....#...#"
-        "###########"
-        "###########"
-    );
-
-    add_dungeon_room(
-        dungeon, 11, 0, 11, 11,
-        "#####..####"
-        "#####..####"
-        "#####..####"
-        "####....###"
-        "........###"
-        "........###"
-        "####....###"
-        "###########"
-        "###########"
-        "###########"
-        "###########"
-    );
-
-    add_dungeon_room(
-        dungeon, 11, -11, 11, 11,
-        "###########"
-        "####....###"
-        "###......##"
-        "###......##"
-        "###......##"
-        "###......##"
-        "###......##"
-        "####....###"
-        "#####..####"
-        "#####..####"
-        "#####..####"
-    );
-
-    Player player = {24,24,12,12};
+    Player player = {.body = {.size = {12, 12}}};
+    player.body.position = dungeon->spawn_point;
     
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();

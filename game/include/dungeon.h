@@ -6,6 +6,23 @@
 typedef struct DungeonRoom DungeonRoom;
 typedef struct Dungeon Dungeon;
 
+struct DungeonRoom {
+    TileMap* map;
+    int origin_x, origin_y;
+};
+
+struct Dungeon {
+    TileRenderer* renderer;
+    DungeonRoom* rooms;
+    int num_rooms;
+    int active_room;
+    Vector2 spawn_point;
+
+    // for animating
+    int previous_room;
+    float transition_progress;
+};
+
 // Collisions
 // ----------
 
@@ -31,7 +48,8 @@ DungeonCollisionResult dungeon_translate_rect(
     const char* blocking_tiles
 );
 
-Dungeon* make_dungeon();
+Dungeon* make_empty_dungeon();
+Dungeon* parse_dungeon(const char* text);
 void delete_dungeon(Dungeon* dungeon);
 void add_dungeon_room(
     Dungeon* dungeon,
