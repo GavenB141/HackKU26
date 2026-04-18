@@ -1,12 +1,17 @@
 use std::process::ExitCode;
 
-use axum::{Router, routing::get};
+use axum::{
+    Router,
+    routing::{get, post},
+};
 use tokio::{
     net::TcpListener,
     signal::unix::{SignalKind, signal},
 };
 use tower_http::trace::TraceLayer;
 use tracing::{error, info};
+
+mod routes;
 
 #[tokio::main]
 async fn main() -> ExitCode {
@@ -15,7 +20,8 @@ async fn main() -> ExitCode {
 
     // initialize the routes
     let router = Router::new()
-        .route("/", get(|| async { "Hello, world!" }))
+        .route("/new", post(routes::post_new))
+        .route("/generated/{id}", get(routes::get_id))
         .layer(TraceLayer::new_for_http());
 
     // set up the listener
