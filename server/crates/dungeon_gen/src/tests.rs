@@ -257,7 +257,7 @@ mod content_tests {
             // goal is always placed (find_goal_in_grid guarantees it)
             let eg = content.get(goal).and_then(|c| c.enemies.as_ref());
             assert!(
-                eg.map_or(false, |e| e.is_boss),
+                eg.is_some_and(|e| e.is_boss),
                 "Goal room {} should have boss (seed {})",
                 goal,
                 seed
@@ -272,7 +272,7 @@ mod content_tests {
             let has_enemies_on_root = content
                 .get(tree.root)
                 .and_then(|c| c.enemies.as_ref())
-                .map_or(false, |e| !e.is_boss);
+                .is_some_and(|e| !e.is_boss);
             assert!(
                 !has_enemies_on_root,
                 "Root should never have enemy group (seed {})",
@@ -435,7 +435,7 @@ mod evolution_tests {
         let has_boss = d
             .content
             .iter()
-            .any(|c| c.enemies.as_ref().map_or(false, |e| e.is_boss));
+            .any(|c| c.enemies.as_ref().is_some_and(|e| e.is_boss));
         assert!(has_boss, "Generated dungeon should have a boss");
     }
 
@@ -472,11 +472,11 @@ mod evolution_tests {
             let d = generate(&DungeonConfig::new(15, 3, 2, 2.0, seed));
             // The boss room must be the parent of the exit room
             let parent = d.tree.parent_of(d.exit_room_id);
-            let parent_is_boss = parent.map_or(false, |pid| {
+            let parent_is_boss = parent.is_some_and(|pid| {
                 d.content
                     .get(pid)
                     .and_then(|c| c.enemies.as_ref())
-                    .map_or(false, |e| e.is_boss)
+                    .is_some_and(|e| e.is_boss)
             });
             // When exit_room_id != goal fallback (boss always placed), parent must be boss
             if d.exit_room_id != d.tree.root {
@@ -742,7 +742,7 @@ mod layout_tests {
                 .content
                 .iter()
                 .enumerate()
-                .find(|(_, c)| c.enemies.as_ref().map_or(false, |e| e.is_boss))
+                .find(|(_, c)| c.enemies.as_ref().is_some_and(|e| e.is_boss))
                 .map(|(id, _)| id);
             if let Some(bid) = boss_id {
                 if let Some(boss_tr) = d.tile_map.room_for(bid) {
@@ -786,7 +786,6 @@ mod layout_tests {
 
     #[test]
     fn all_content_tiles_are_reachable() {
-        use crate::tests::layout_tests_helper;
         // Every interactive tile must be reachable from a door tile
         let content_kinds: &[TileKind] = &[
             TileKind::Chest,
@@ -819,15 +818,14 @@ mod layout_tests {
                         for (dx, dy) in [(0i32, 1), (0, -1), (1, 0), (-1, 0)] {
                             let nc = dc as i32 + dx;
                             let nr = dr as i32 + dy;
-                            if nc >= 1 && nc <= 9 && nr >= 1 && nr <= 9 {
-                                if tr.get(nc as usize, nr as usize).is_walkable() {
+                            if (1..=9).contains(&nc) && (1..=9).contains(&nr)
+                                && tr.get(nc as usize, nr as usize).is_walkable() {
                                     reachable.extend(crate::tests::layout_tests_helper::flood(
                                         &tr.tiles,
                                         (nc as usize, nr as usize),
                                     ));
                                     break;
                                 }
-                            }
                         }
                     }
                     reachable

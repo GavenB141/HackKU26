@@ -314,6 +314,7 @@ pub fn place_content(
     let mut next_door_id = 0u32;
     let mut next_signal_id = 0u32;
 
+    #[allow(clippy::explicit_counter_loop)]
     for _ in 0..n_pairs {
         if switch_candidates.len() < 2 {
             break;

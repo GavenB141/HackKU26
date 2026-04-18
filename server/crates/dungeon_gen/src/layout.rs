@@ -543,6 +543,10 @@ fn apply_columned(tiles: &mut [TileKind; TOTAL_TILES], rng: &mut Rng) {
 // Creates recessed pockets by framing corners/edges with pillars, leaving a
 // small nook of clear floor tucked against the interior wall face.
 // The outer wall ring (col 0, col 10, row 0, row 10) is NEVER modified.
+#[expect(
+    clippy::type_complexity,
+    reason = "the corner frames type is large but expected"
+)]
 fn apply_alcove(tiles: &mut [TileKind; TOTAL_TILES], rng: &mut Rng) {
     // Alcove sites: L-shaped pillar frames around interior corners/edges.
     // Each site is defined as a set of pillar positions that create a nook
@@ -628,12 +632,12 @@ fn clamp_density(tiles: &mut [TileKind; TOTAL_TILES], rng: &mut Rng) {
         // Randomly remove pillars until within range
         let to_remove = obstacle_count - max_obstacles;
         let mut removed = 0;
-        for i in 0..TOTAL_TILES {
+        for tile in tiles {
             if removed >= to_remove {
                 break;
             }
-            if tiles[i] == TileKind::Pillar && rng.next_f64() < 0.5 {
-                tiles[i] = TileKind::Floor;
+            if *tile == TileKind::Pillar && rng.next_f64() < 0.5 {
+                *tile = TileKind::Floor;
                 removed += 1;
             }
         }
@@ -711,7 +715,7 @@ fn interesting_positions(
     }
 
     // Sort descending by score
-    scored.sort_by(|a, b| b.0.cmp(&a.0));
+    scored.sort_by_key(|b| std::cmp::Reverse(b.0));
     scored.into_iter().map(|(_, c, r)| (c, r)).collect()
 }
 
