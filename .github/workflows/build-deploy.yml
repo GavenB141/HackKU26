@@ -29,12 +29,12 @@ jobs:
       - name: Build game
         working-directory: game
         run: |
-          emmake make EXTRA_INC=-I../raylib/src/ EXTRA_LIB="-L../raylib/src/ -s USE_GLFW=3 -s USE_WEBGL2=1" OUTPUT=index.html
+          emmake make EXTRA_INC=-I../raylib/src/ EXTRA_LIB="-L../raylib/src/ -s USE_GLFW=3 -s USE_WEBGL2=1 -s ASYNCIFY" OUTPUT=index.html
 
       - name: Prepare site
         run: |
           mkdir -p site
-          cp -r game/dist/* site/ || cp -r game/*.{html,js,wasm} site/ || true
+          cp -rv game/*.{html,js,wasm} site/ || true
           touch site/.nojekyll
 
       - name: Upload Pages artifact
