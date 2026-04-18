@@ -19,7 +19,14 @@ jobs:
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Build raylib (Make)
+      - name: Build and install raylib
+        run: |
+          git clone https://github.com/raysan5/raylib.git
+          cd raylib/src
+          emmake make PLATFORM=PLATFORM_WEB
+          sudo emmake make install
+
+      - name: Build game
         working-directory: game
         run: |
           emmake make
