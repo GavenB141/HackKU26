@@ -1,3 +1,4 @@
+#include "tiles.h"
 #include <raylib.h>
 #include <raymath.h>
 
@@ -19,6 +20,14 @@ static void draw_canvas_scaled_to_screen() {
         canvas.texture, draw_source, draw_target, Vector2Zero(), 0, WHITE);
 }
 
+void generic_gray_draw(Texture texture, Rectangle target, unsigned char neighbor_bits) {
+    DrawRectangleRec(target, GRAY);
+}
+
+void generic_white_draw(Texture texture, Rectangle target, unsigned char neighbor_bits) {
+    DrawRectangleRec(target, RAYWHITE);
+}
+
 int main () {
     InitWindow(canvas_size.x, canvas_size.y, "HackKU 2026");
     SetTargetFPS(144);
@@ -27,10 +36,27 @@ int main () {
 
     canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
 
+    TileMap* map = make_tilemap(
+        15, 10, 
+        "###############"
+        "#.....#.......#"
+        "#.....#.......#"
+        "#....#####....#"
+        "#....#........#"
+        "#........#....#"
+        "#....#####....#"
+        "#.......#.....#"
+        "#.......#.....#"
+        "###############"
+    );
+    TileRenderer* renderer = make_tile_renderer(16, 16);
+    register_tile_type(renderer, '#', (TileDrawBehavior){(Texture){0}, generic_gray_draw});
+    register_tile_type(renderer, '.', (TileDrawBehavior){(Texture){0}, generic_white_draw});
+
     while (!WindowShouldClose()) {
         BeginTextureMode(canvas);
         ClearBackground(DARKGRAY);
-        // Main drawing logic goes here
+        draw_tilemap(map, renderer, Vector2Zero());
         EndTextureMode();
 
         BeginDrawing();
@@ -38,6 +64,9 @@ int main () {
         draw_canvas_scaled_to_screen();
         EndDrawing();
     }
+
+    delete_tile_renderer(renderer);
+    delete_tilemap(map);
 
     UnloadRenderTexture(canvas);
     CloseWindow();
