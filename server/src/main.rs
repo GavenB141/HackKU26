@@ -24,7 +24,7 @@ async fn main() -> ExitCode {
     // initialize the routes
     let router = Router::new()
         .route("/new", post(routes::post_new))
-        .route("/generated/{id}", get(routes::get_id))
+        .route("/dungeon/{seed}", get(routes::generate_dungeon_from_seed))
         .layer(TraceLayer::new_for_http());
 
     // set up the listener

@@ -4,9 +4,8 @@ use tracing::trace;
 
 pub async fn post_new() -> impl IntoResponse {}
 
-pub async fn get_id(Path(id): Path<u64>) -> impl IntoResponse {
-    // TODO: this should probably take a DB ID and return more than one dungeon worth of configuration
-    let config = dungeon_gen::DungeonConfig::defaults_with_seed(id);
+pub async fn generate_dungeon_from_seed(Path(seed): Path<u64>) -> impl IntoResponse {
+    let config = dungeon_gen::DungeonConfig::defaults_with_seed(seed);
 
     let dungeon = tokio::task::spawn_blocking(move || dungeon_gen::generate(&config))
         .await
