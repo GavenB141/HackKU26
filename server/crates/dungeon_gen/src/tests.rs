@@ -818,14 +818,16 @@ mod layout_tests {
                         for (dx, dy) in [(0i32, 1), (0, -1), (1, 0), (-1, 0)] {
                             let nc = dc as i32 + dx;
                             let nr = dr as i32 + dy;
-                            if (1..=9).contains(&nc) && (1..=9).contains(&nr)
-                                && tr.get(nc as usize, nr as usize).is_walkable() {
-                                    reachable.extend(crate::tests::layout_tests_helper::flood(
-                                        &tr.tiles,
-                                        (nc as usize, nr as usize),
-                                    ));
-                                    break;
-                                }
+                            if (1..=9).contains(&nc)
+                                && (1..=9).contains(&nr)
+                                && tr.get(nc as usize, nr as usize).is_walkable()
+                            {
+                                reachable.extend(crate::tests::layout_tests_helper::flood(
+                                    &tr.tiles,
+                                    (nc as usize, nr as usize),
+                                ));
+                                break;
+                            }
                         }
                     }
                     reachable

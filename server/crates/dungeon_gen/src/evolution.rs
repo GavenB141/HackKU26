@@ -68,11 +68,17 @@ impl DungeonConfig {
             seed,
         }
     }
+
+    /// Construct with most of the parameters set according to the paper.
+    pub fn defaults_with_seed(seed: u64) -> Self {
+        Self::new(18, 4, 4, 1.89, seed)
+    }
 }
 
 // ── Output ─────────────────────────────────────────────────────────────────
 
 /// The best dungeon produced by the CEA, with content fully placed.
+#[derive(Debug)]
 pub struct GeneratedDungeon {
     pub tree: DungeonTree,
     pub grid: DungeonGrid,
