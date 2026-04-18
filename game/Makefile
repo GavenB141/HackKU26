@@ -18,7 +18,7 @@ OBJECTS := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
 EXTRA_INC ?=
 EXTRA_LIB ?=
 
-CC := gcc
+CC ?= gcc
 FFLAGS := -fsanitize=address
 LDFLAGS := $(EXTRA_LIB) -lraylib
 
