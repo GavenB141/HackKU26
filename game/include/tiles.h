@@ -21,11 +21,25 @@ struct TileDrawBehavior {
         unsigned char neighbor_bits);
 };
 
-void draw_tilemap(const TileMap* map, const TileRenderer* rdr, Vector2 offset);
+struct TileMap {
+    Tile* map;
+    int width, height;
+};
+
+struct TileRenderer {
+    TileDrawBehavior draw_rules[128];
+    int tile_width, tile_height;
+};
+
+
 TileMap* make_tilemap(int width, int height, const char* layout);
 TileRenderer* make_tile_renderer(int tile_width, int tile_height);
 void delete_tilemap(TileMap* tilemap);
 void delete_tile_renderer(TileRenderer* renderer);
+void draw_tilemap(const TileMap* map, const TileRenderer* rdr, Vector2 offset);
 void register_tile_type(TileRenderer* tr, char symbol, TileDrawBehavior behavior);
+
+Tile get_tile(const TileMap* map, int x, int y);
+unsigned char get_neighbor_bits(const TileMap* map, char tiletype, int x, int y);
 
 #endif

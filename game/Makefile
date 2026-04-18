@@ -20,7 +20,7 @@ EXTRA_LIB ?=
 
 CC ?= gcc
 FFLAGS := -fsanitize=address
-LDFLAGS := $(EXTRA_LIB) -lraylib
+LDFLAGS := $(EXTRA_LIB) -lraylib -lm
 
 $(OUTPUT): $(OBJECTS)
 	@$(CC) $^ $(LDFLAGS) $(FFLAGS) -o $(OUTPUT)
