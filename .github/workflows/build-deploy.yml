@@ -24,8 +24,8 @@ jobs:
           git clone https://github.com/raysan5/raylib.git
           cd raylib/src
           emmake make PLATFORM=PLATFORM_WEB
-          sudo cp -v raylib.h /usr/local/include/
-          sudo cp -v libraylib.a /usr/local/lib/
+          sudo cp -v raylib.h $EMSCRIPTEN/cache/sysroot/include/
+          sudo cp -v libraylib.web.a $EMSCRIPTEN/cache/sysroot/lib/
 
       - name: Build game
         working-directory: game
