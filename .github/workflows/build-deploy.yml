@@ -26,8 +26,9 @@ jobs:
           emmake make PLATFORM=PLATFORM_WEB
           pwd
           ls ../../ -la
-          sudo cp -v raylib.h ../../emsdk-cache/sysroot/include/
-          sudo cp -v libraylib.web.a ../../emsdk-cache/sysroot/lib/
+          find ~ -type d
+          cp -v raylib.h ../../emsdk-cache/sysroot/include/
+          cp -v libraylib.web.a ../../emsdk-cache/sysroot/lib/
 
       - name: Build game
         working-directory: game
