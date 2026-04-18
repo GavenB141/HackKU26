@@ -24,7 +24,7 @@ jobs:
           git clone https://github.com/raysan5/raylib.git
           cd raylib/src
           emmake make PLATFORM=PLATFORM_WEB
-          sudo emmake make install
+          sudo --preserve-env=PATH emmake make install
 
       - name: Build game
         working-directory: game
