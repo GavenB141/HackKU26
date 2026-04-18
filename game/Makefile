@@ -6,7 +6,7 @@ OBJDIR := build
 SRCDIR := src
 INCDIR := include
 
-OUTPUT := bin
+OUTPUT ?= bin
 
 SOURCES := $(shell find $(SRCDIR) -name '*.c')
 OBJECTS := $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(SOURCES))
