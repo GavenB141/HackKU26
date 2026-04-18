@@ -41,6 +41,29 @@ static void update_camera(const Dungeon* dungeon, float dt) {
     camera.target = Vector2MoveTowards(camera.target, target, dt * 1000);
 }
 
+static void draw_hud(const Player *player)
+{
+    // precalculate relevant positions
+    const float canvas_left = canvas_size.x - 48;
+    const float canvas_tile_size = 16;
+    const float health_offset = canvas_tile_size * 2;
+    // UI background
+    DrawRectangle(canvas_left, 0, 48, canvas_size.y, DARKGRAY);
+
+    // Draw the player health status
+    DrawText("HEALTH", canvas_left, canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
+    for (int heart = 0; heart < player->health; heart++)
+    {
+        // draw a rectangle that fills the tile, with a one-pixel border on each side
+        DrawRectangle(
+            canvas_left + (canvas_tile_size * heart) + 1,
+            health_offset + 1,
+            canvas_tile_size - 2,
+            canvas_tile_size - 2,
+            RED);
+    }
+}
+
 int main () {
     InitWindow(canvas_size.x * 3, canvas_size.y * 3, "HackKU 2026");
     SetTargetFPS(144);
@@ -53,7 +76,7 @@ int main () {
     Dungeon* dungeon = parse_dungeon(dungeon_text);
     UnloadFileText(dungeon_text);
 
-    Player player = {.body = {.size = {12, 12}}};
+    Player player = {.body = {.size = {12, 12}}, .health = 3};
     player.body.position = dungeon->spawn_point;
     
     while (!WindowShouldClose()) {
@@ -68,7 +91,7 @@ int main () {
         draw_dungeon(dungeon, dt);
         draw_player(&player);
         EndMode2D();
-        DrawRectangle(192, 0, 48, 160, DARKGRAY);
+        draw_hud(&player);
         EndTextureMode();
 
         BeginDrawing();
