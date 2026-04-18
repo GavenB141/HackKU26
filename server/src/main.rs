@@ -10,13 +10,16 @@ use tokio::{
 };
 use tower_http::trace::TraceLayer;
 use tracing::{error, info};
+use tracing_subscriber::EnvFilter;
 
 mod routes;
 
 #[tokio::main]
 async fn main() -> ExitCode {
     // initialize the logging handler
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::from_default_env())
+        .init();
 
     // initialize the routes
     let router = Router::new()
