@@ -60,7 +60,7 @@ TileMap* make_tilemap(int width, int height, const char* layout) {
 }
 
 TileRenderer* make_tile_renderer(int tile_width, int tile_height) {
-    TileRenderer* tr = malloc(sizeof(TileRenderer));
+    TileRenderer* tr = calloc(1, sizeof(TileRenderer));
     tr->tile_height = tile_height;
     tr->tile_width = tile_width;
     return tr;

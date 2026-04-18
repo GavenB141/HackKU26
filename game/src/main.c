@@ -32,7 +32,7 @@ void generic_white_draw(Texture texture, Rectangle target, unsigned char neighbo
 }
 
 static Camera2D camera = {
-    {canvas_size.x / 2, canvas_size.y / 2},
+    {canvas_size.x / 2 - 24, canvas_size.y / 2},
     {canvas_size.x / 2, canvas_size.y / 2},
     0, 1
 };
@@ -40,7 +40,6 @@ static void update_camera(const Dungeon* dungeon, float dt) {
     Rectangle bounds = dungeon_room_bounds(dungeon);
     Vector2 target = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
     camera.target = Vector2MoveTowards(camera.target, target, dt * 1000);
-    fprintf(stdout, "%f %f\n", bounds.x, target.y);
 }
 
 int main () {
@@ -54,34 +53,49 @@ int main () {
     TileRenderer* renderer = make_tile_renderer(16, 16);
     register_tile_type(renderer, '#', (TileDrawBehavior){(Texture){0}, generic_gray_draw});
     register_tile_type(renderer, '.', (TileDrawBehavior){(Texture){0}, generic_white_draw});
+    register_tile_type(renderer, ' ', (TileDrawBehavior){(Texture){0}, 0});
     Dungeon* dungeon = make_dungeon(renderer);
 
     add_dungeon_room(
-        dungeon, 0, 0, 15, 10,
-        "###############"
-        "#.....#.......#"
-        "#.....#.......#"
-        "#....#####....#"
-        "#....#........."
-        "#........#....."
-        "#....#####....#"
-        "#.......#.....#"
-        "#.......#.....#"
-        "###############"
+        dungeon, 0, 0, 12, 10,
+        "############"
+        "#....#.....#"
+        "#....#.....#"
+        "#...####...#"
+        "#...#.!....."
+        "#......#...."
+        "#...####...#"
+        "#.....#....#"
+        "#.....#....#"
+        "############"
     );
 
     add_dungeon_room(
-        dungeon, 15, 0, 15, 10,
-        "###############"
-        "#.............#"
-        "#.............#"
-        "#.............#"
-        "..............#"
-        "..............#"
-        "#.............#"
-        "#.............#"
-        "#.............#"
-        "###############"
+        dungeon, 12, 0, 12, 10,
+        "#####..#####"
+        "#####..#####"
+        "#####..#####"
+        "####....####"
+        "........####"
+        "........####"
+        "####....####"
+        "############"
+        "############"
+        "############"
+    );
+
+    add_dungeon_room(
+        dungeon, 12, -10, 12, 10,
+        "############"
+        "####....####"
+        "###......###"
+        "###......###"
+        "###......###"
+        "###......###"
+        "###......###"
+        "####....####"
+        "#####..#####"
+        "#####..#####"
     );
 
     Player player = {24,24,12,12};
@@ -98,6 +112,7 @@ int main () {
         draw_dungeon(dungeon, dt);
         draw_player(&player);
         EndMode2D();
+        DrawRectangle(192, 0, 48, 160, DARKGRAY);
         EndTextureMode();
 
         BeginDrawing();
