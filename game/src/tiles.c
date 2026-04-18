@@ -75,7 +75,16 @@ void delete_tile_renderer(TileRenderer* renderer) {
     free(renderer);
 }
 
-void register_tile_type(TileRenderer* tr, char symbol, TileDrawBehavior behavior) {
+void register_tile_type(
+    TileRenderer* tr,
+    char symbol,
+    Texture texture,
+    void (*callback)(
+        Texture tex,
+        Rectangle target,
+        unsigned char neighbor_bits
+    )
+) {
     assert(symbol > 0);
-    tr->draw_rules[symbol] = behavior;
+    tr->draw_rules[symbol] = (TileDrawBehavior) {texture, callback};
 }

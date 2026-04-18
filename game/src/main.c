@@ -3,7 +3,6 @@
 #include "dungeon.h"
 #include <raylib.h>
 #include <raymath.h>
-#include <stdio.h>
 
 static const Vector2 canvas_size = {240, 160};
 static RenderTexture canvas;
@@ -50,11 +49,7 @@ int main () {
 
     canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
 
-    TileRenderer* renderer = make_tile_renderer(16, 16);
-    register_tile_type(renderer, '#', (TileDrawBehavior){(Texture){0}, generic_gray_draw});
-    register_tile_type(renderer, '.', (TileDrawBehavior){(Texture){0}, generic_white_draw});
-    register_tile_type(renderer, ' ', (TileDrawBehavior){(Texture){0}, 0});
-    Dungeon* dungeon = make_dungeon(renderer);
+    Dungeon* dungeon = make_dungeon();
 
     add_dungeon_room(
         dungeon, 0, 0, 12, 10,
@@ -62,7 +57,7 @@ int main () {
         "#....#.....#"
         "#....#.....#"
         "#...####...#"
-        "#...#.!....."
+        "#...#......."
         "#......#...."
         "#...####...#"
         "#.....#....#"
@@ -121,7 +116,6 @@ int main () {
         EndDrawing();
     }
 
-    delete_tile_renderer(renderer);
     delete_dungeon(dungeon);
 
     UnloadRenderTexture(canvas);

@@ -31,7 +31,7 @@ DungeonCollisionResult dungeon_translate_rect(
     const char* blocking_tiles
 );
 
-Dungeon* make_dungeon(TileRenderer* renderer);
+Dungeon* make_dungeon();
 void delete_dungeon(Dungeon* dungeon);
 void add_dungeon_room(
     Dungeon* dungeon,

@@ -17,6 +17,8 @@ struct Dungeon {
     int num_rooms;
     int active_room;
 
+    char signals[128];
+
     // for animating
     int previous_room;
     float transition_progress;
@@ -107,16 +109,11 @@ DungeonCollisionResult dungeon_translate_rect(
     return result;
 }
 
-Dungeon* make_dungeon(TileRenderer* renderer) {
-    Dungeon* dungeon = calloc(1, sizeof(Dungeon));
-    dungeon->renderer = renderer;
-    return dungeon;
-}
-
 void delete_dungeon(Dungeon* dungeon) {
     for (int i = 0; i < dungeon->num_rooms; i++) {
         delete_tilemap(dungeon->rooms[i].map);
     }
+    delete_tile_renderer(dungeon->renderer);
     free(dungeon->rooms);
     free(dungeon);
 }
@@ -206,3 +203,16 @@ void dungeon_focus(Dungeon* dungeon, Vector2 position) {
         }
     }
 }
+
+
+
+Dungeon* make_dungeon() {
+    Dungeon* dungeon = calloc(1, sizeof(Dungeon));
+    TileRenderer* renderer = make_tile_renderer(16, 16);
+
+
+
+    dungeon->renderer = renderer;
+    return dungeon;
+}
+

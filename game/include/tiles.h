@@ -37,7 +37,16 @@ TileRenderer* make_tile_renderer(int tile_width, int tile_height);
 void delete_tilemap(TileMap* tilemap);
 void delete_tile_renderer(TileRenderer* renderer);
 void draw_tilemap(const TileMap* map, const TileRenderer* rdr, Vector2 offset);
-void register_tile_type(TileRenderer* tr, char symbol, TileDrawBehavior behavior);
+void register_tile_type(
+    TileRenderer* tr,
+    char symbol, 
+    Texture texture,
+    void (*callback)(
+        Texture tex,
+        Rectangle target,
+        unsigned char neighbor_bits
+    )
+);
 
 Tile get_tile(const TileMap* map, int x, int y);
 unsigned char get_neighbor_bits(const TileMap* map, char tiletype, int x, int y);
