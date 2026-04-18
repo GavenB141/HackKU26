@@ -3,6 +3,7 @@
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include "dungeon.h"
 
@@ -204,13 +205,113 @@ void dungeon_focus(Dungeon* dungeon, Vector2 position) {
     }
 }
 
+static void draw_wall_tile(
+    Texture texture, Rectangle target, unsigned char neighbor_bits
+) {
+    Vector2 selection = {-1, -1};
 
+    if (neighbor_bits == 255) {
+        selection = (Vector2){1,1};
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b01011010) {
+        case 0: selection = (Vector2){3,3}; break;
+        case 2: selection = (Vector2){3,0}; break;
+        case 8: selection = (Vector2){0,3}; break;
+        case 16: selection = (Vector2){2,3}; break;
+        case 64: selection = (Vector2){3,2}; break;
+        case 66: selection = (Vector2){3,1}; break;
+        case 24: selection = (Vector2){1,3}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits) {
+        case 0b11111110: selection = (Vector2){4,0}; break;
+        case 0b11111011: selection = (Vector2){5,0}; break;
+        case 0b11011111: selection = (Vector2){4,1}; break;
+        case 0b01111111: selection = (Vector2){5,1}; break;
+        case 0b11011110: selection = (Vector2){6,0}; break;
+        case 0b11111010: selection = (Vector2){6,1}; break;
+        case 0b01011111: selection = (Vector2){6,2}; break;
+        case 0b01111011: selection = (Vector2){6,3}; break;
+        case 0b11011011: selection = (Vector2){2,6}; break;
+        case 0b01111110: selection = (Vector2){3,6}; break;
+
+        case 0b01011011: selection = (Vector2){4,2}; break;
+        case 0b01011110: selection = (Vector2){5,2}; break;
+        case 0b01111010: selection = (Vector2){4,3}; break;
+        case 0b11011010: selection = (Vector2){5,3}; break;
+        case 0b01011010: selection = (Vector2){5,5}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b11010110) {
+        case 0b11010110: selection = (Vector2){2,1}; break;
+        case 0b11010010: selection = (Vector2){1,4}; break;
+        case 0b01010110: selection = (Vector2){1,5}; break;
+        case 0b01010010: selection = (Vector2){6,5}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b00011111) {
+        case 0b00011111: selection = (Vector2){1,0}; break;
+        case 0b00011110: selection = (Vector2){2,4}; break;
+        case 0b00011011: selection = (Vector2){3,4}; break;
+        case 0b00011010: selection = (Vector2){5,4}; break;
+        case 0b00010010: selection = (Vector2){6,4}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b01101011) {
+        case 0b01101011: selection = (Vector2){0,1}; break;
+        case 0b01101010: selection = (Vector2){0,4}; break;
+        case 0b01001011: selection = (Vector2){0,5}; break;
+        case 0b01001010: selection = (Vector2){4,5}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b11111000) {
+        case 0b11111000: selection = (Vector2){1,2}; break;
+        case 0b11011000: selection = (Vector2){2,5}; break;
+        case 0b01111000: selection = (Vector2){3,5}; break;
+        case 0b01011000: selection = (Vector2){5,6}; break;
+        case 0b01001000: selection = (Vector2){4,6}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b11010000) {
+        case 0b11010000: selection = (Vector2){2,2}; break;
+        case 0b01010000: selection = (Vector2){6,6}; break;
+    }
+
+    if (selection.x == -1) switch (neighbor_bits & 0b00001011) {
+        case 0b00001011: selection = (Vector2){0,0}; break;
+        case 0b00001010: selection = (Vector2){4,4}; break;
+    }
+
+    if (selection.x == -1 && (neighbor_bits & 0b00010110) == 0b00010110)
+        selection = (Vector2){2,0};
+    if (selection.x == -1 && (neighbor_bits & 0b01101000) == 0b01101000)
+        selection = (Vector2){0,2};
+
+    selection = Vector2Scale(selection, 16);
+    DrawTexturePro(
+        texture,
+        (Rectangle){selection.x, selection.y, 16, 16},
+        target,
+        Vector2Zero(),
+        0,
+        WHITE
+    );
+}
+
+static void draw_floor_tile(Texture texture, Rectangle target, unsigned char _) {
+    Rectangle src = {16, 96, 16, 16};
+
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
 
 Dungeon* make_dungeon() {
     Dungeon* dungeon = calloc(1, sizeof(Dungeon));
     TileRenderer* renderer = make_tile_renderer(16, 16);
 
-
+    Texture wall_texture = LoadTexture("assets/map_tiles.png");
+    register_tile_type(renderer, '#', wall_texture, draw_wall_tile);
+    register_tile_type(renderer, '.', wall_texture, draw_floor_tile);
 
     dungeon->renderer = renderer;
     return dungeon;

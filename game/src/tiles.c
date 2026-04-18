@@ -21,7 +21,9 @@ unsigned char get_neighbor_bits(const TileMap* map, char tiletype, int x, int y)
             int nx = dx + x;
             
             bits <<= 1;
-            bits |= get_tile(map, nx, ny).type == tiletype;
+            Tile neighbor_tile = get_tile(map, nx, ny);
+            if (neighbor_tile.type == tiletype || neighbor_tile.type == -1)
+                bits |= 1;
         }
     }
 
