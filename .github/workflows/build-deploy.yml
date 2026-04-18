@@ -20,14 +20,14 @@ jobs:
         uses: mymindstorm/setup-emsdk@v14
 
       - name: Build raylib (Make)
-        working-directory: wasm-app
+        working-directory: game
         run: |
           emmake make
 
       - name: Prepare site
         run: |
           mkdir -p site
-          cp -r wasm-app/dist/* site/ || cp -r wasm-app/*.{html,js,wasm} site/ || true
+          cp -r game/dist/* site/ || cp -r game/*.{html,js,wasm} site/ || true
           touch site/.nojekyll
 
       - name: Upload Pages artifact
