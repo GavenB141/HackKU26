@@ -24,16 +24,11 @@ jobs:
           git clone https://github.com/raysan5/raylib.git
           cd raylib/src
           emmake make PLATFORM=PLATFORM_WEB
-          pwd
-          ls ../../ -la
-          find ~ -type d
-          cp -v raylib.h ../../emsdk-cache/sysroot/include/
-          cp -v libraylib.web.a ../../emsdk-cache/sysroot/lib/
 
       - name: Build game
         working-directory: game
         run: |
-          emmake make
+          emmake make EXTRA_INC=-I../raylib/src/ EXTRA_LIB=-L../raylib/src/
 
       - name: Prepare site
         run: |
