@@ -22,9 +22,9 @@ Built for HackKU26. The project has evolved quite a bit since the initial concep
 
 ## How We Built It
 
-- **Language & Engine**: Written entirely in **C** using [raylib](https://www.raylib.com/) for rendering, input, and audio.
+- **Game**: Written entirely in **C** using [raylib](https://www.raylib.com/) for rendering, input, and audio.
 - **Deployment**: Compiled to **WebAssembly** and hosted on GitHub Pages — so anyone can jump in and play directly in their browser with zero installation.
-- **Dungeon Generation**: Powered by a **genetic algorithm** inspired by evolutionary PCG techniques (specifically drawing from research on generating coherent dungeon maps with locked-door style progression and connectivity). We used AI tools to help implement and tune the evolutionary system for better layout quality, pathing, and replayability.
+- **Dungeon Generation**: Implemented in **Rust** Powered by a **genetic algorithm** inspired by evolutionary PCG techniques (specifically drawing from research on generating coherent dungeon maps with locked-door style progression and connectivity). We used AI tools to help implement and tune the evolutionary system for better layout quality, pathing, and replayability.
 
 The whole thing stays lightweight, runs smoothly in the browser, and still feels like a proper roguelike descent.
 
