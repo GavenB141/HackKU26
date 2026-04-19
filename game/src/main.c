@@ -48,6 +48,7 @@ static void draw_hud(const Player *player, Texture texture)
     const float canvas_left = canvas_size.x - 48;
     const float canvas_tile_size = 16;
     const float health_offset = canvas_tile_size * 2;
+    const float key_offset = canvas_tile_size * 4;
     // UI background
     DrawRectangle(canvas_left, 0, 48, canvas_size.y, DARKGRAY);
 
@@ -58,6 +59,16 @@ static void draw_hud(const Player *player, Texture texture)
         // draw
         Rectangle src = {5*canvas_tile_size, 0, 16, 16};
         Rectangle target = {canvas_left + (canvas_tile_size * heart), health_offset, 16, 16};
+        DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+    }
+
+    // Draw the player health status
+    DrawText("KEYS", canvas_left, 3*canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
+    for (int key = 0; key < player->health; key++)
+    {
+        // draw
+        Rectangle src = {3*canvas_tile_size, 1*canvas_tile_size, 16, 16};
+        Rectangle target = {canvas_left + (canvas_tile_size * key), key_offset, 16, 16};
         DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
     }
 }

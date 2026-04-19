@@ -373,7 +373,9 @@ static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* m
 static void draw_chest_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {64, 0, 16, 16};
     Tile tile = get_tile(map, x, y);
-    if (tile.meta[0]) {
+    if (tile.meta[1]) {
+        src.y += 16;
+    }else if (tile.meta[0]) {
         src.x -= 16;
     }
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
