@@ -20,9 +20,9 @@ static void move_player(Player* player, Dungeon* dungeon, float dt) {
         }
     } else {
         if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) vel.y -= 1;
-        if (IsKeyDown(KEY_A || IsKeyDown(KEY_RIGHT))) vel.x -= 1;
-        if (IsKeyDown(KEY_S || IsKeyDown(KEY_DOWN))) vel.y += 1;
-        if (IsKeyDown(KEY_D || IsKeyDown(KEY_LEFT))) vel.x += 1;
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_RIGHT)) vel.x -= 1;
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) vel.y += 1;
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_LEFT)) vel.x += 1;
 
         vel = Vector2Scale(
             Vector2Normalize(vel),
