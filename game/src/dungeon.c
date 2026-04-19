@@ -239,102 +239,123 @@ void dungeon_focus(Dungeon* dungeon, Vector2 position) {
     }
 }
 
+/*
+ * Neighbor bit layout (from get_neighbor_bits):
+ *   bit 0 = NW, bit 1 = N, bit 2 = NE
+ *   bit 3 = W,             bit 4 = E
+ *   bit 5 = SW, bit 6 = S, bit 7 = SE
+ *
+ * A diagonal neighbor only affects tile selection when BOTH of its adjacent
+ * cardinals are also walls (i.e. it fills an inner corner). In all other cases
+ * the diagonal bit is irrelevant and must be masked out before lookup, which
+ * is what the old code failed to do for the N+E and W+S cardinal pairs.
+ *
+ * We re-encode as 8 "effective" bits with the same cardinal positions but
+ * diagonal bits suppressed unless their two cardinals are both set:
+ *   bit 0 = N
+ *   bit 1 = W
+ *   bit 2 = E
+ *   bit 3 = S
+ *   bit 4 = NW_fill  (set only when N && W && NW)
+ *   bit 5 = NE_fill  (set only when N && E && NE)
+ *   bit 6 = SW_fill  (set only when S && W && SW)
+ *   bit 7 = SE_fill  (set only when S && E && SE)
+ *
+ * This maps all 256 raw inputs onto exactly 47 distinct keys, each of which
+ * corresponds to one tile in the 7x7 tile sheet (coordinates in tile units).
+ */
+/* Tile sheet coordinates (column, row) indexed by effective neighbor bits. */
+static const Vector2 WALL_TILE_TABLE[256] = {
+    [0] = {3, 3},   /* isolated                          */
+    [1] = {3, 0},   /* N only                            */
+    [2] = {0, 3},   /* W only                            */
+    [3] = {4, 4},   /* N+W, no corner fill               */
+    [4] = {2, 3},   /* E only                            */
+    [5] = {6, 4},   /* N+E, no corner fill               */
+    [6] = {1, 3},   /* W+E (horizontal corridor)         */
+    [7] = {5, 4},   /* N+W+E, no NW/NE fill              */
+    [8] = {3, 2},   /* S only                            */
+    [9] = {3, 1},   /* N+S (vertical corridor)           */
+    [10] = {4, 6},  /* W+S, no corner fill               */
+    [11] = {4, 5},  /* N+W+S, no NW/SW fill              */
+    [12] = {6, 6},  /* E+S, no corner fill               */
+    [13] = {6, 5},  /* N+E+S, no NE/SE fill              */
+    [14] = {5, 6},  /* W+E+S, no SW/SE fill              */
+    [15] = {5, 5},  /* N+W+E+S, no fills (all cardinals) */
+    [19] = {0, 0},  /* N+W, NW filled                    */
+    [23] = {3, 4},  /* N+W+E, NW filled                  */
+    [27] = {0, 5},  /* N+W+S, NW filled                  */
+    [31] = {4, 2},  /* N+W+E+S, NW filled                */
+    [37] = {2, 0},  /* N+E, NE filled                    */
+    [39] = {2, 4},  /* N+W+E, NE filled                  */
+    [45] = {1, 5},  /* N+E+S, NE filled                  */
+    [47] = {5, 2},  /* N+W+E+S, NE filled                */
+    [55] = {1, 0},  /* N+W+E, NW+NE filled               */
+    [63] = {6, 2},  /* N+W+E+S, NW+NE filled             */
+    [74] = {0, 2},  /* W+S, SW filled                    */
+    [75] = {0, 4},  /* N+W+S, SW filled                  */
+    [78] = {3, 5},  /* W+E+S, SW filled                  */
+    [79] = {4, 3},  /* N+W+E+S, SW filled                */
+    [91] = {0, 1},  /* N+W+S, NW+SW filled               */
+    [95] = {6, 3},  /* N+W+E+S, NW+SW filled             */
+    [111] = {3, 6}, /* N+W+E+S, NE+SW filled             */
+    [127] = {5, 1}, /* N+W+E+S, NW+NE+SW filled          */
+    [140] = {2, 2}, /* E+S, SE filled                    */
+    [141] = {1, 4}, /* N+E+S, SE filled                  */
+    [142] = {2, 5}, /* W+E+S, SE filled                  */
+    [143] = {5, 3}, /* N+W+E+S, SE filled                */
+    [159] = {2, 6}, /* N+W+E+S, NE+SE filled             */
+    [173] = {2, 1}, /* N+E+S, NE+SE filled               */
+    [175] = {6, 0}, /* N+W+E+S, NW+NE+SE filled          */
+    [191] = {4, 1}, /* N+W+E+S, NW+NE+SW+SE filled       */
+    [206] = {1, 2}, /* W+E+S, SW+SE filled               */
+    [207] = {6, 1}, /* N+W+E+S, SW+SE filled             */
+    [223] = {5, 0}, /* N+W+E+S, NW+SW+SE filled          */
+    [239] = {4, 0}, /* N+W+E+S, NE+SW+SE filled          */
+    [255] = {1, 1}, /* all neighbors (fully surrounded)  */
+};
+
+/*
+ * Compute the lookup key from raw neighbor bits.
+ *
+ * Diagonal bits are suppressed unless both of their adjacent cardinals
+ * are set, which is the only situation where they influence tile choice.
+ */
+static int wall_tile_key(unsigned char nb)
+{
+    int N = (nb >> 1) & 1;
+    int NE = (nb >> 2) & 1;
+    int W = (nb >> 3) & 1;
+    int E = (nb >> 4) & 1;
+    int SW = (nb >> 5) & 1;
+    int S = (nb >> 6) & 1;
+    int SE = (nb >> 7) & 1;
+    int NW = (nb >> 0) & 1;
+
+    int nw_fill = NW & N & W;
+    int ne_fill = NE & N & E;
+    int sw_fill = SW & S & W;
+    int se_fill = SE & S & E;
+
+    return N | (W << 1) | (E << 2) | (S << 3) | (nw_fill << 4) | (ne_fill << 5) | (sw_fill << 6) | (se_fill << 7);
+}
+
 static void draw_wall_tile(
     Texture texture,
     Rectangle target,
-    const TileMap* map,
-    int x, int y
-) {
-    Vector2 selection = {-1, -1};
-    unsigned char neighbor_bits = get_neighbor_bits(map, '#', x, y) | get_neighbor_bits(map, 'l', x, y) | get_neighbor_bits(map, 'd', x, y) | get_neighbor_bits(map, 'D', x, y);
+    const TileMap *map,
+    int x, int y)
+{
+    unsigned char nb = get_neighbor_bits(map, '#', x, y) | get_neighbor_bits(map, 'l', x, y) | get_neighbor_bits(map, 'd', x, y) | get_neighbor_bits(map, 'D', x, y);
 
-    if (neighbor_bits == 255) {
-        selection = (Vector2){1,1};
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b01011010) {
-        case 0: selection = (Vector2){3,3}; break;
-        case 2: selection = (Vector2){3,0}; break;
-        case 8: selection = (Vector2){0,3}; break;
-        case 16: selection = (Vector2){2,3}; break;
-        case 64: selection = (Vector2){3,2}; break;
-        case 66: selection = (Vector2){3,1}; break;
-        case 24: selection = (Vector2){1,3}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits) {
-        case 0b11111110: selection = (Vector2){4,0}; break;
-        case 0b11111011: selection = (Vector2){5,0}; break;
-        case 0b11011111: selection = (Vector2){4,1}; break;
-        case 0b01111111: selection = (Vector2){5,1}; break;
-        case 0b11011110: selection = (Vector2){6,0}; break;
-        case 0b11111010: selection = (Vector2){6,1}; break;
-        case 0b01011111: selection = (Vector2){6,2}; break;
-        case 0b01111011: selection = (Vector2){6,3}; break;
-        case 0b11011011: selection = (Vector2){2,6}; break;
-        case 0b01111110: selection = (Vector2){3,6}; break;
-
-        case 0b01011011: selection = (Vector2){4,2}; break;
-        case 0b01011110: selection = (Vector2){5,2}; break;
-        case 0b01111010: selection = (Vector2){4,3}; break;
-        case 0b11011010: selection = (Vector2){5,3}; break;
-        case 0b01011010: selection = (Vector2){5,5}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b11010110) {
-        case 0b11010110: selection = (Vector2){2,1}; break;
-        case 0b11010010: selection = (Vector2){1,4}; break;
-        case 0b01010110: selection = (Vector2){1,5}; break;
-        case 0b01010010: selection = (Vector2){6,5}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b00011111) {
-        case 0b00011111: selection = (Vector2){1,0}; break;
-        case 0b00011110: selection = (Vector2){2,4}; break;
-        case 0b00011011: selection = (Vector2){3,4}; break;
-        case 0b00011010: selection = (Vector2){5,4}; break;
-        case 0b00010010: selection = (Vector2){6,4}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b01101011) {
-        case 0b01101011: selection = (Vector2){0,1}; break;
-        case 0b01101010: selection = (Vector2){0,4}; break;
-        case 0b01001011: selection = (Vector2){0,5}; break;
-        case 0b01001010: selection = (Vector2){4,5}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b11111000) {
-        case 0b11111000: selection = (Vector2){1,2}; break;
-        case 0b11011000: selection = (Vector2){2,5}; break;
-        case 0b01111000: selection = (Vector2){3,5}; break;
-        case 0b01011000: selection = (Vector2){5,6}; break;
-        case 0b01001000: selection = (Vector2){4,6}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b11010000) {
-        case 0b11010000: selection = (Vector2){2,2}; break;
-        case 0b01010000: selection = (Vector2){6,6}; break;
-    }
-
-    if (selection.x == -1) switch (neighbor_bits & 0b00001011) {
-        case 0b00001011: selection = (Vector2){0,0}; break;
-        case 0b00001010: selection = (Vector2){4,4}; break;
-    }
-
-    if (selection.x == -1 && (neighbor_bits & 0b00010110) == 0b00010110)
-        selection = (Vector2){2,0};
-    if (selection.x == -1 && (neighbor_bits & 0b01101000) == 0b01101000)
-        selection = (Vector2){0,2};
-
-    selection = Vector2Scale(selection, 16);
+    Vector2 tile = WALL_TILE_TABLE[wall_tile_key(nb)];
     DrawTexturePro(
         texture,
-        (Rectangle){selection.x, selection.y, 16, 16},
+        (Rectangle){tile.x * 16, tile.y * 16, 16, 16},
         target,
         Vector2Zero(),
         0,
-        WHITE
-    );
+        WHITE);
 }
 
 static void draw_floor_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
