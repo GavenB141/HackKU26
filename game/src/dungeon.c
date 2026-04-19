@@ -365,6 +365,37 @@ static void draw_stairs_tile(Texture texture, Rectangle target, const TileMap* m
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
+static void draw_switch_door_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {32, 0, 16, 16};
+
+    unsigned char wall_bits = get_neighbor_bits(map, '.', x, y) ^ get_neighbor_bits(map, 'l', x, y);
+    
+    if ((wall_bits & 0b01000000) == 0b01000000) {
+        // floor above, bottom door
+        src.x = 32;
+        src.y = 48;
+    }else if ((wall_bits & 0b00000010) == 0b00000010)
+    {
+        // floor below, top door
+        src.x = 32;
+        src.y = 32;
+    }else if ((wall_bits & 0b00001000) == 0b00001000)
+    {
+        // floor right, left door
+        src.x = 48;
+        src.y = 32;
+    }else if ((wall_bits & 0b00010000) == 0b00010000)
+    {
+        // floor left, right door
+        src.x = 48;
+        src.y = 48;
+}
+
+static void draw_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {64, 32, 16, 16};
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
+
 Dungeon* make_empty_dungeon() {
     Dungeon* dungeon = calloc(1, sizeof(Dungeon));
     TileRenderer* renderer = make_tile_renderer(16, 16);
@@ -377,6 +408,8 @@ Dungeon* make_empty_dungeon() {
     register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
     register_tile_type(renderer, 'k', item_texture, draw_chest_tile);
     register_tile_type(renderer, 'X', item_texture, draw_stairs_tile);
+    register_tile_type(renderer, 'd', item_texture, draw_switch_door_tile);
+    register_tile_type(renderer, 's', item_texture, draw_switch_tile);
 
     dungeon->renderer = renderer;
     return dungeon;
