@@ -42,7 +42,7 @@ static void update_camera(const Dungeon* dungeon, float dt) {
     camera.target = Vector2MoveTowards(camera.target, target, dt * 1000);
 }
 
-static void draw_hud(const Player *player)
+static void draw_hud(const Player *player, Texture texture)
 {
     // precalculate relevant positions
     const float canvas_left = canvas_size.x - 48;
@@ -55,13 +55,10 @@ static void draw_hud(const Player *player)
     DrawText("HEALTH", canvas_left, canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
     for (int heart = 0; heart < player->health; heart++)
     {
-        // draw a rectangle that fills the tile, with a one-pixel border on each side
-        DrawRectangle(
-            canvas_left + (canvas_tile_size * heart) + 1,
-            health_offset + 1,
-            canvas_tile_size - 2,
-            canvas_tile_size - 2,
-            RED);
+        // draw
+        Rectangle src = {5*canvas_tile_size, 0, 16, 16};
+        Rectangle target = {canvas_left + (canvas_tile_size * heart), health_offset, 16, 16};
+        DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
     }
 }
 
@@ -79,6 +76,8 @@ int main () {
 
     Player* player = make_player();
     player->body.position = dungeon->spawn_point;
+
+    Texture item_texture = LoadTexture("assets/item_tiles.png");
     
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
@@ -97,7 +96,7 @@ int main () {
         draw_enemies(dungeon->rooms[dungeon->active_room].enemy);
         draw_player(player, dt);
         EndMode2D();
-        draw_hud(player);
+        draw_hud(player, item_texture);
         EndTextureMode();
 
         BeginDrawing();
