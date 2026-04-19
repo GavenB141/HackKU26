@@ -59,7 +59,16 @@ TileMap* make_tilemap(int width, int height, const char* layout) {
             continue;
         }
 
-        tm->map[i].type = *layout;
+        char symbol = *layout;
+        switch (symbol)
+        {
+        case '@':
+        case 'e':
+            symbol = '.';
+            break;
+        }
+
+        tm->map[i].type = symbol;
     }
 
     return tm;

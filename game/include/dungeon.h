@@ -1,14 +1,16 @@
 #ifndef DUNGEON_H
 #define DUNGEON_H
 
-#include "tiles.h"
-
 typedef struct DungeonRoom DungeonRoom;
 typedef struct Dungeon Dungeon;
+
+#include "tiles.h"
+#include "enemy.h"
 
 struct DungeonRoom {
     TileMap* map;
     int origin_x, origin_y;
+    Enemy *enemy;
 };
 
 struct Dungeon {

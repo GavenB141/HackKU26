@@ -1,10 +1,11 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include "dungeon.h"
 #include <raylib.h>
 
 typedef struct Player Player;
+
+#include "dungeon.h"
 
 struct Player {
     union {
