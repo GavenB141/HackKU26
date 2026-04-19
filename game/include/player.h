@@ -42,6 +42,8 @@ struct Player {
 
     int health;
     int keys;
+
+    float invincible_time;
 };
 
 Player* make_player();
@@ -49,5 +51,7 @@ void delete_player(Player* player);
 
 void draw_player(Player* player, float dt);
 void update_player(Player* player, Dungeon* dungeon, float dt);
+
+Vector2 get_player_center(const Player *player);
 
 #endif

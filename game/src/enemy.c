@@ -1,5 +1,6 @@
 #include "enemy.h"
 #include "sfx.h"
+#include "player.h"
 
 #include <stddef.h>
 #include <raymath.h>
@@ -97,6 +98,15 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
         break;
     case ENEMY_DEAD:
         break;
+    }
+
+    // try to hurt the player directly
+    bool can_hurt_player = !(enemy->current_state == ENEMY_STUNNED || enemy->current_state == ENEMY_DEAD) && player->invincible_time <= 0;
+    if (can_hurt_player && CheckCollisionCircles(get_player_center(player), player->body.size.x / 2, enemy->position, 5))
+    {
+        player->health -= 1;
+        player->invincible_time = 3.0;
+        play_sfx(SFX_RAT_INJURED);
     }
 
     // recurse to next enemy

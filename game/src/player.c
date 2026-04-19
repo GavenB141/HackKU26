@@ -84,13 +84,17 @@ void draw_player(Player* player, float dt) {
         );
     }
 
-    DrawTexturePro(
-        player->spritesheet,
-        src,
-        target,
-        (Vector2){19, 21},
-        0, WHITE
-    );
+    bool visible = player->invincible_time <= 0 || ((int)(GetTime() * 20) % 2 == 0);
+
+    if (visible)
+    {
+        DrawTexturePro(
+            player->spritesheet,
+            src,
+            target,
+            (Vector2){19, 21},
+            0, WHITE);
+    }
 }
 
 static void resolve_player_direction(Player* player, Vector2 move_dir) {
@@ -111,26 +115,39 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
     const float dash_cooldown = 0.35;
     Vector2 vel = Vector2Zero();
 
-    if (player->dash_time > 0) {
+    if (player->invincible_time > 0)
+        player->invincible_time -= dt;
+
+    if (player->dash_time > 0)
+    {
         vel = player->dash_velocity;
         player->dash_time -= dt;
-        if (player->dash_time <= 0) {
+        if (player->dash_time <= 0)
+        {
             player->dash_time = -dash_cooldown;
         }
-    } else {
-        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) vel.y -= 1;
-        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) vel.x -= 1;
-        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) vel.y += 1;
-        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) vel.x += 1;
+    }
+    else
+    {
+        if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP))
+            vel.y -= 1;
+        if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT))
+            vel.x -= 1;
+        if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN))
+            vel.y += 1;
+        if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT))
+            vel.x += 1;
 
         vel = Vector2Scale(
             Vector2Normalize(vel),
-            speed
-        );
+            speed);
 
-        if (player->dash_time < 0) {
+        if (player->dash_time < 0)
+        {
             player->dash_time = Clamp(player->dash_time + dt, -dash_cooldown, 0);
-        } else if (player->hammer_charge == 0 && IsKeyDown(KEY_LEFT_SHIFT)) {
+        }
+        else if (player->hammer_charge == 0 && IsKeyDown(KEY_LEFT_SHIFT))
+        {
             player->dash_velocity = Vector2Scale(vel, 3);
             player->dash_time = 0.15;
         }
