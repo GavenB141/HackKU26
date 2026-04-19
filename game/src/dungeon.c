@@ -316,7 +316,7 @@ static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* m
     }else if ((wall_bits & 0b00000010) == 0b00000010)
     {
         // floor below, top door
-        src.x = 16;
+        src.x = 96;
         src.y = 0;
     }else if ((wall_bits & 0b00000000) == 0b00000000)
     {
