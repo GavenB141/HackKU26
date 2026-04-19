@@ -139,8 +139,51 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
     vel = Vector2Scale(vel, dt);
     resolve_player_direction(player, vel);
 
+    // Probe just ahead of the player for locked doors and use a key if available
+    if (player->keys > 0 && !Vector2Equals(vel, Vector2Zero())) {
+        float tw = dungeon->renderer->tile_width;
+        float th = dungeon->renderer->tile_height;
+        DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
+        Rectangle aabb = player->body.aabb;
+        const float probe = 2.0f;
+        Vector2 points[4];
+        int npoints = 0;
+        if (vel.x > 0) {
+            points[npoints++] = (Vector2){aabb.x + aabb.width + probe, aabb.y + 1};
+            points[npoints++] = (Vector2){aabb.x + aabb.width + probe, aabb.y + aabb.height - 2};
+        } else if (vel.x < 0) {
+            points[npoints++] = (Vector2){aabb.x - probe, aabb.y + 1};
+            points[npoints++] = (Vector2){aabb.x - probe, aabb.y + aabb.height - 2};
+        }
+        if (vel.y > 0) {
+            points[npoints++] = (Vector2){aabb.x + 1, aabb.y + aabb.height + probe};
+            points[npoints++] = (Vector2){aabb.x + aabb.width - 2, aabb.y + aabb.height + probe};
+        } else if (vel.y < 0) {
+            points[npoints++] = (Vector2){aabb.x + 1, aabb.y - probe};
+            points[npoints++] = (Vector2){aabb.x + aabb.width - 2, aabb.y - probe};
+        }
+        for (int i = 0; i < npoints && player->keys > 0; i++) {
+            int gx = (int)floorf(points[i].x / tw);
+            int gy = (int)floorf(points[i].y / th);
+            if (dungeon_unlock_door(dungeon, gx, gy))
+                player->keys--;
+        }
+    }
+
     DungeonCollisionResult result = dungeon_translate_rect(
         dungeon, player->body.aabb, vel, 0);
+
+    // Pick up keys from opened chests (k tiles with meta[0] set)
+    DungeonRoom* active_room = &dungeon->rooms[dungeon->active_room];
+    for (int i = 0; i < result.contact_count; i++) {
+        DungeonTileContact* c = &result.contacts[i];
+        if (c->tile.type == 'k' && c->tile.meta[0]) {
+            int lx = c->tx - active_room->origin_x;
+            int ly = c->ty - active_room->origin_y;
+            active_room->map->map[ly * active_room->map->width + lx].type = '.';
+            player->keys++;
+        }
+    }
 
     player->last_translation = Vector2Subtract(*(Vector2*)&result.resolved, player->body.position);
     player->body.aabb = result.resolved;

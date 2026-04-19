@@ -41,6 +41,7 @@ struct Player {
     Vector2 last_translation;
 
     int health;
+    int keys;
 };
 
 Player* make_player();

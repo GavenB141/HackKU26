@@ -1,57 +1,58 @@
 #include "player.h"
-#include "tiles.h"
 #include "dungeon.h"
 #include "enemy.h"
 #include "sfx.h"
 #include <raylib.h>
 #include <raymath.h>
+#include <stdlib.h>
+#include <time.h>
 
-static const Vector2 canvas_size = {224, 176};
-static RenderTexture canvas;
+static const Vector2 CANVAS_SIZE = {224, 176};
+
+static struct GameState {
+    const Vector2 canvas_size;
+    RenderTexture canvas;
+    Camera2D camera;
+    Player* player;
+    Dungeon* dungeon;
+} state = {
+    .camera =  {
+        {CANVAS_SIZE.x / 2 - 24, CANVAS_SIZE.y / 2},
+        {CANVAS_SIZE.x / 2, CANVAS_SIZE.y / 2},
+        0, 1
+    }
+};
+
 static void draw_canvas_scaled_to_screen() {
-    const int scale_x = GetScreenWidth() / canvas_size.x; 
-    const int scale_y = GetScreenHeight() / canvas_size.y;
+    const int scale_x = GetScreenWidth() / CANVAS_SIZE.x; 
+    const int scale_y = GetScreenHeight() / CANVAS_SIZE.y;
     const int scale   = scale_x < scale_y ? scale_x : scale_y;
 
-    const Rectangle draw_source = {0, 0, canvas_size.x, -canvas_size.y};
+    const Rectangle draw_source = {0, 0, CANVAS_SIZE.x, -CANVAS_SIZE.y};
     Rectangle draw_target;
-    draw_target.width = canvas_size.x * scale;
-    draw_target.height = canvas_size.y * scale;
+    draw_target.width = CANVAS_SIZE.x * scale;
+    draw_target.height = CANVAS_SIZE.y * scale;
     draw_target.x = (GetScreenWidth()  - draw_target.width)  / 2;
     draw_target.y = (GetScreenHeight() - draw_target.height) / 2;
 
     DrawTexturePro(
-        canvas.texture, draw_source, draw_target, Vector2Zero(), 0, WHITE);
+        state.canvas.texture, draw_source, draw_target, Vector2Zero(), 0, WHITE);
 }
 
-void generic_gray_draw(Texture texture, Rectangle target, unsigned char neighbor_bits) {
-    DrawRectangleRec(target, GRAY);
-}
-
-void generic_white_draw(Texture texture, Rectangle target, unsigned char neighbor_bits) {
-    DrawRectangleRec(target, RAYWHITE);
-}
-
-static Camera2D camera = {
-    {canvas_size.x / 2 - 24, canvas_size.y / 2},
-    {canvas_size.x / 2, canvas_size.y / 2},
-    0, 1
-};
 static void update_camera(const Dungeon* dungeon, float dt) {
     Rectangle bounds = dungeon_room_bounds(dungeon);
     Vector2 target = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
-    camera.target = Vector2MoveTowards(camera.target, target, dt * 1000);
+    state.camera.target = Vector2MoveTowards(state.camera.target, target, dt * 1000);
 }
 
-static void draw_hud(const Player *player, Texture texture)
-{
+static void draw_hud(const Player *player, Texture texture) {
     // precalculate relevant positions
-    const float canvas_left = canvas_size.x - 48;
+    const float canvas_left = CANVAS_SIZE.x - 48;
     const float canvas_tile_size = 16;
     const float health_offset = canvas_tile_size * 2;
     const float key_offset = canvas_tile_size * 4;
     // UI background
-    DrawRectangle(canvas_left, 0, 48, canvas_size.y, DARKGRAY);
+    DrawRectangle(canvas_left, 0, 48, CANVAS_SIZE.y, DARKGRAY);
 
     // Draw the player health status
     DrawText("HEALTH", canvas_left, canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
@@ -65,7 +66,7 @@ static void draw_hud(const Player *player, Texture texture)
 
     // Draw the player health status
     DrawText("KEYS", canvas_left, 3*canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
-    for (int key = 0; key < player->health; key++)
+    for (int key = 0; key < player->keys; key++)
     {
         // draw
         Rectangle src = {3*canvas_tile_size, 1*canvas_tile_size, 16, 16};
@@ -74,43 +75,51 @@ static void draw_hud(const Player *player, Texture texture)
     }
 }
 
+static void load_random_dungeon() {
+    int rn = rand() % 10000 + 1;
+    
+    if (!state.player) state.player = make_player();
+    if (state.dungeon) delete_dungeon(state.dungeon);
+    char* file = LoadFileText(TextFormat("assets/dungeons/%d", rn));
+    state.dungeon = parse_dungeon(file);
+    UnloadFileText(file);
+    state.player->body.position = state.dungeon->spawn_point;
+}
+
 int main () {
-    InitWindow(canvas_size.x * 3, canvas_size.y * 3, "HackKU 2026");
+    srand(time(0));
+
+    InitWindow(CANVAS_SIZE.x * 3, CANVAS_SIZE.y * 3, "HackKU 2026");
     SetTargetFPS(144);
-    SetWindowMinSize(canvas_size.x, canvas_size.y);
+    SetWindowMinSize(CANVAS_SIZE.x, CANVAS_SIZE.y);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
 
     init_sfx();
 
-    canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
+    state.canvas = LoadRenderTexture(CANVAS_SIZE.x, CANVAS_SIZE.y);
 
-    char* dungeon_text = LoadFileText("assets/dungeons/2");
-    Dungeon* dungeon = parse_dungeon(dungeon_text);
-    UnloadFileText(dungeon_text);
-
-    Player* player = make_player();
-    player->body.position = dungeon->spawn_point;
+    load_random_dungeon();
 
     Texture item_texture = LoadTexture("assets/item_tiles.png");
     
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
 
-        update_player(player, dungeon, dt);
-        update_camera(dungeon, dt);
-        update_enemies(dungeon->rooms[dungeon->active_room].enemy,
-                       dungeon,
-                       player,
+        update_player(state.player, state.dungeon, dt);
+        update_camera(state.dungeon, dt);
+        update_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy,
+                       state.dungeon,
+                       state.player,
                        dt);
 
-        BeginTextureMode(canvas);
+        BeginTextureMode(state.canvas);
         ClearBackground(DARKGRAY);
-        BeginMode2D(camera);
-        draw_dungeon(dungeon, dt);
-        draw_enemies(dungeon->rooms[dungeon->active_room].enemy);
-        draw_player(player, dt);
+        BeginMode2D(state.camera);
+        draw_dungeon(state.dungeon, dt);
+        draw_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy);
+        draw_player(state.player, dt);
         EndMode2D();
-        draw_hud(player, item_texture);
+        draw_hud(state.player, item_texture);
         EndTextureMode();
 
         BeginDrawing();
@@ -119,10 +128,10 @@ int main () {
         EndDrawing();
     }
 
-    delete_dungeon(dungeon);
-    delete_player(player);
+    delete_dungeon(state.dungeon);
+    delete_player(state.player);
 
-    UnloadRenderTexture(canvas);
+    UnloadRenderTexture(state.canvas);
     CloseWindow();
 }
 
