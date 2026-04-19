@@ -1,9 +1,12 @@
 #ifndef SFX_H
 #define SFX_H
 
-typedef enum SfxId {
+typedef enum SfxId
+{
+    SFX_CHEST_BREAK,
     SFX_DOOR_UNLOCK,
     SFX_GET_KEY,
+    SFX_GHOST_CHARGE,
     SFX_GHOST_DEFEATED,
     SFX_GHOST_INJURED,
     SFX_HAMMER_HIT,

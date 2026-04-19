@@ -1,4 +1,5 @@
 #include "enemy.h"
+#include "sfx.h"
 
 #include <stddef.h>
 #include <raymath.h>
@@ -67,6 +68,7 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
         {
             enemy->current_state = ENEMY_CHARGING;
             enemy->state_time_left = charge_time;
+            play_sfx(SFX_GHOST_CHARGE);
         }
         break;
     case ENEMY_CHARGING:

@@ -530,6 +530,7 @@ bool dungeon_unlock_door(Dungeon* dungeon, int global_tx, int global_ty) {
         Tile* adj = get_tile_global(dungeon, global_tx + dx[i], global_ty + dy[i]);
         if (adj && adj->type == 'l') adj->type = 'D';
     }
+    play_sfx(SFX_DOOR_UNLOCK);
     return true;
 }
 
@@ -553,6 +554,7 @@ static bool attack_tile(Dungeon *dungeon, int x, int y) {
     if (tile->type == 'k')
     {
         tile->meta[0] = 1;
+        play_sfx(SFX_CHEST_BREAK);
         return true;
     }
     return false;
