@@ -240,7 +240,7 @@ static void draw_wall_tile(
     int x, int y
 ) {
     Vector2 selection = {-1, -1};
-    unsigned char neighbor_bits = get_neighbor_bits(map, '#', x, y) | get_neighbor_bits(map, 'l', x, y) | get_neighbor_bits(map, 'd', x, y);
+    unsigned char neighbor_bits = get_neighbor_bits(map, '#', x, y) | get_neighbor_bits(map, 'l', x, y) | get_neighbor_bits(map, 'd', x, y) | get_neighbor_bits(map, 'D', x, y);
 
     if (neighbor_bits == 255) {
         selection = (Vector2){1,1};
