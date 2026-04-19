@@ -151,6 +151,7 @@ static void load_random_dungeon() {
     state.level_number++;
     
     if (!state.player) state.player = make_player();
+    state.player->keys = 0;
     if (state.dungeon) delete_dungeon(state.dungeon);
     char* file = LoadFileText(TextFormat("assets/dungeons/%d", rn));
     state.dungeon = parse_dungeon(file);
