@@ -1,22 +1,38 @@
-# HackKU Game: [Working Title TBD]
+# HammeRat
 
-Every run begins with a roll of the dice — not on a dungeon layout or enemy stats, but on reality itself.
-Before you ever move a character, the game pulls from a fixed library of mad-libs-style world templates — sentence structures with slots for places, factions, villains, McGuffins, tones, and stakes. Word lists fill those slots, and in seconds you have a world: "A crumbling bureaucratic empire built on stolen music is threatened by a guild of amnesiac librarians." That's your setting. The game locks it in and hands it to an LLM, which uses it as a creative brief to design everything that follows — the story arc, the cast of characters, their personalities and relationships, and the layout logic for each level. No two runs share a world.
+The first AAAA roguelike dungeon crawler where you play as a determined rat armed with an oversized hammer. Your mission? Descend through ever-changing floors of a haunted dungeon to claim the legendary cheese waiting at the bottom.
+
+Ghosts, traps, and procedural chaos stand between you and that glorious wheel. Swing hard, dodge smarter, and you may discover the legendary Cheddar.
 
 ## Gameplay
-At its core, this is a top-down roguelike puzzle game in the spirit of classic Zelda — small self-contained rooms, enemy encounters that reward positioning and timing, and environmental puzzles that gate your progress. Runs are structured as a series of stages, each culminating in a challenge before the story moves forward.
-Movement is a first-class mechanic. Beyond walking, players have access to a dash and similar kinetic tools that make navigation feel snappy and expressive — useful for dodging attacks, solving spatial puzzles, and generally rewarding players who develop fluency with the controls.
 
-## Characters That Look the Part
-Every character — hero, villain, ally, or enemy — is assembled from a library of composable sprite components: body types, clothing layers, accessories, facial features, and more. Each component is stored as a grayscale or neutral-toned asset and dynamically colorized at runtime using a palette derived from the character's generated personality and faction. A cold, bureaucratic antagonist might be rendered in muted silvers and dusty purples; a chaotic rogue ally gets clashing warm tones that feel vaguely untrustworthy. The same underlying parts produce wildly different-looking characters depending on what the LLM designed. No hand-authored sprite sheet could cover the combinatorial range these worlds demand — this system does it automatically.
+- **Procedural Dungeons**: Every descent is unique. Floors are randomly generated with winding corridors, chambers, and surprises.
+- **Combat**: Bash ghosts in a manner that makes no logical sense with your trusty hammer. Timing and positioning matter, as you only get three strikes and your out.
+- **The Goal**: Reach the deepest level and snag the cheese. Simple in concept, brutally replayable in practice.
+- **Permadeath**: Classic roguelike style. Die, learn, descend again.
 
-## The Living Story
-Between stages, the LLM writes in-character dialog — banter, taunts, plot revelations, and reactions — all grounded in the specific world and characters generated for your run. Beat a tough room and your villain might gloat that you got lucky. Fail and crawl back to a checkpoint, and a companion character might offer something between sympathy and mockery. This dialog isn't generic; it references your world, your characters, and roughly where you are in the story arc.
-Every line is automatically dubbed using ElevenLabs voice synthesis, giving each character a distinct voice that matches their personality. The result is something closer to a lo-fi audio drama than a silent text box.
+## Key Features
 
-## The Social Layer
-A cloud backend handles the heavy lifting: proxying all AI and voice requests so players never touch your API keys, storing the seeds and generated content for each run — including the full character assembly data and color palettes — and powering a social sharing interface where players can post their runs for others to browse. Someone else's ridiculous generated world — the amnesiac librarians, the stolen music empire — becomes a thing people can discover, react to, and compare against their own. Every run is a unique artifact, right down to how its characters look.
+- **Rat**: You're rodent.
+- **Smart Level Generation**: We drew inspiration from evolutionary genetic algorthim approaches to craft dungeons that change every time you decsend. 
+- **Ghost-Hammering Action**: Fluid movement and satisfying combat in a top-down view.
+- **Replayability**: New seeds, new layouts, new ways to get absolutely wrecked by ghosts.
 
----
+Built for HackKU26. The project has evolved quite a bit since the initial concept — this is the current version: pure rat-powered roguelike goodness.
 
-The core loop is tight and familiar. The world wrapped around it is never the same twice.
+## How We Built It
+
+- **Language & Engine**: Written entirely in **C** using [raylib](https://www.raylib.com/) for rendering, input, and audio.
+- **Deployment**: Compiled to **WebAssembly** and hosted on GitHub Pages — so anyone can jump in and play directly in their browser with zero installation.
+- **Dungeon Generation**: Powered by a **genetic algorithm** inspired by evolutionary PCG techniques (specifically drawing from research on generating coherent dungeon maps with locked-door style progression and connectivity). We used AI tools to help implement and tune the evolutionary system for better layout quality, pathing, and replayability.
+
+The whole thing stays lightweight, runs smoothly in the browser, and still feels like a proper roguelike descent.
+
+## Controls 
+
+- Move: Arrow keys or WASD
+- Hammer swing: Space 
+- Dash: Left Shift
+
+## [Play the Game](https://gavenb141.github.io/HackKU26/)
+https://gavenb141.github.io/HackKU26/
