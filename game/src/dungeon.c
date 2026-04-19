@@ -235,6 +235,7 @@ void dungeon_focus(Dungeon* dungeon, Vector2 position) {
                 dungeon->previous_room = dungeon->active_room;
                 dungeon->active_room = i;
             }
+            dungeon->rooms[i].explored = true;
             return;
         }
     }
@@ -538,6 +539,24 @@ Dungeon* parse_dungeon(const char* text) {
             }
         }
     }
+
+    for (int i = 0; i < dungeon->num_rooms; i++) {
+        const TileMap* map = dungeon->rooms[i].map;
+        for (int j = 0; j < map->width * map->height; j++) {
+            if (map->map[j].type == 's') dungeon->num_switches++;
+        }
+    }
+
+    if (dungeon->num_switches == 0) {
+        for (int i = 0; i < dungeon->num_rooms; i++) {
+            TileMap* m = dungeon->rooms[i].map;
+            for (int j = 0; j < m->width * m->height; j++) {
+                if (m->map[j].type == 'X') { m->map[j].meta[0] = 1; goto stairs_open; }
+            }
+        }
+        stairs_open:;
+    }
+
     return dungeon;
 }
 
@@ -574,13 +593,19 @@ static bool attack_tile(Dungeon *dungeon, int x, int y) {
 
     Tile* tile = &room->map->map[index];
 
-    if (tile->type == 's') {
-        tile->meta[0] = !tile->meta[0];
-
-        if (tile->meta[0])
-            play_sfx(SFX_SWITCH_PRESSED);
-        else
-            play_sfx(SFX_SWITCH_DEPRESSED);
+    if (tile->type == 's' && !tile->meta[0]) {
+        tile->meta[0] = 1;
+        play_sfx(SFX_SWITCH_PRESSED);
+        dungeon->switches_activated++;
+        if (dungeon->switches_activated >= dungeon->num_switches) {
+            for (int i = 0; i < dungeon->num_rooms; i++) {
+                TileMap* m = dungeon->rooms[i].map;
+                for (int j = 0; j < m->width * m->height; j++) {
+                    if (m->map[j].type == 'X') { m->map[j].meta[0] = 1; goto done; }
+                }
+            }
+            done:;
+        }
         return true;
     }
     if (tile->type == 'k')

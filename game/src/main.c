@@ -6,6 +6,7 @@
 #include <raymath.h>
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 
 #define TILE_SIZE 16
 
@@ -19,12 +20,15 @@ static struct GameState {
     Dungeon* dungeon;
     Texture nums_tex;
     Texture item_tex;
+    int level_number;
     int dungeon_id;
     enum
     {
         GS_MAIN_MENU,
         GS_DUNGEON_CRAWL,
     } screen;
+    float fade_alpha;
+    bool fading_out;
 } state = {
     .camera = {
         {CANVAS_SIZE.x / 2 - 24, CANVAS_SIZE.y / 2},
@@ -69,14 +73,55 @@ static void draw_number(Vector2 first_digit_loc, unsigned int number) {
     } while (number);
 }
 
+static bool room_has_stairs(const DungeonRoom* r) {
+    int n = r->map->width * r->map->height;
+    for (int i = 0; i < n; i++) {
+        if (r->map->map[i].type == 'X') return true;
+    }
+    return false;
+}
+
+static void draw_minimap() {
+    if (!state.dungeon || state.dungeon->num_rooms == 0) return;
+
+    const int CELL = 4;
+    const float map_x = CANVAS_SIZE.x - 48 + 4;
+    const float map_y = TILE_SIZE * 3 + 4;
+
+    int min_gx = INT_MAX, min_gy = INT_MAX;
+    for (int i = 0; i < state.dungeon->num_rooms; i++) {
+        DungeonRoom* r = &state.dungeon->rooms[i];
+        int gx = r->origin_x / 11;
+        int gy = r->origin_y / 11;
+        if (gx < min_gx) min_gx = gx;
+        if (gy < min_gy) min_gy = gy;
+    }
+
+    for (int i = 0; i < state.dungeon->num_rooms; i++) {
+        DungeonRoom* r = &state.dungeon->rooms[i];
+        if (!r->explored) continue;
+        int gx = r->origin_x / 11 - min_gx;
+        int gy = r->origin_y / 11 - min_gy;
+        Color col = (i == state.dungeon->active_room) ? WHITE
+                  : room_has_stairs(r)               ? RED
+                  : (Color){110, 110, 110, 255};
+        DrawRectangle((int)(map_x + gx * CELL), (int)(map_y + gy * CELL), CELL, CELL, col);
+    }
+}
+
 static void draw_hud() {
     // precalculate relevant positions
     const float canvas_left = CANVAS_SIZE.x - 48;
-    const float health_offset = TILE_SIZE * 0;
-    const float key_offset = TILE_SIZE * 1;
+    const float level_offset = TILE_SIZE * 0;
+    const float health_offset = TILE_SIZE * 1;
+    const float key_offset = TILE_SIZE * 2;
 
     // UI background
     DrawRectangle(canvas_left, 0, 48, CANVAS_SIZE.y, DARKGRAY);
+
+    // Draw level number
+    DrawText("Lvl", canvas_left + 4, level_offset + 3, 10, WHITE);
+    draw_number((Vector2){CANVAS_SIZE.x - 8, level_offset + 3}, state.level_number);
 
     // Draw the player health status
     for (int heart = 0; heart < state.player->health; heart++) {
@@ -91,6 +136,9 @@ static void draw_hud() {
     DrawTexturePro(state.item_tex, src, target, Vector2Zero(), 0, WHITE);
     draw_number((Vector2){CANVAS_SIZE.x - 12, key_offset + 4}, state.player->keys);
 
+    // Draw minimap above dungeon id
+    draw_minimap();
+
     // Draw dungeon id
     draw_number((Vector2){CANVAS_SIZE.x - 12, CANVAS_SIZE.y - 10}, state.dungeon_id);
 }
@@ -98,6 +146,7 @@ static void draw_hud() {
 static void load_random_dungeon() {
     int rn = rand() % 166 + 1;
     state.dungeon_id = rn;
+    state.level_number++;
     
     if (!state.player) state.player = make_player();
     if (state.dungeon) delete_dungeon(state.dungeon);
@@ -105,6 +154,23 @@ static void load_random_dungeon() {
     state.dungeon = parse_dungeon(file);
     UnloadFileText(file);
     state.player->body.position = state.dungeon->spawn_point;
+}
+
+static void handle_transitions(float dt) {
+    if (state.player->on_stairs && !state.fading_out && state.fade_alpha == 0)
+        state.fading_out = true;
+
+    if (state.fading_out) {
+        state.fade_alpha += dt * 2.0f;
+        if (state.fade_alpha >= 1.0f) {
+            state.fade_alpha = 1.0f;
+            state.fading_out = false;
+            load_random_dungeon();
+        }
+    } else if (state.fade_alpha > 0) {
+        state.fade_alpha -= dt * 2.0f;
+        if (state.fade_alpha < 0) state.fade_alpha = 0;
+    }
 }
 
 int main () {
@@ -166,6 +232,7 @@ int main () {
             EndMode2D();
             draw_hud();
             EndTextureMode();
+            handle_transitions(dt);
             break;
         }
 

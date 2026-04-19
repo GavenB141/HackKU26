@@ -7,7 +7,16 @@
 #include <stddef.h>
 #include <raymath.h>
 
+static void update_enemies_impl(Enemy *enemy, const Enemy *first_enemy, const Dungeon *dungeon, Player *player, float dt);
+
 void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float dt)
+{
+    if (!enemy) return;
+    const Enemy *first_enemy = dungeon->rooms[dungeon->active_room].enemy;
+    update_enemies_impl(enemy, first_enemy, dungeon, player, dt);
+}
+
+static void update_enemies_impl(Enemy *enemy, const Enemy *first_enemy, const Dungeon *dungeon, Player *player, float dt)
 {
     if (!enemy) return;
 
@@ -27,7 +36,7 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
     {
     case ENEMY_WANDER:
         // normal "player seeking" behavior
-        const Enemy *first_enemy = dungeon->rooms[dungeon->active_room].enemy;
+        ;
         // chase player
         Vector2 move_direction =
             Vector2Scale(
@@ -114,7 +123,7 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
     }
 
     // recurse to next enemy
-    update_enemies(enemy->next_enemy, dungeon, player, dt);
+    update_enemies_impl(enemy->next_enemy, first_enemy, dungeon, player, dt);
 }
 
 #define ENEMY_FRAME_PERIOD 0.75

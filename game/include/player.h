@@ -44,6 +44,7 @@ struct Player {
     int keys;
 
     float invincible_time;
+    bool on_stairs;
 };
 
 Player* make_player();
