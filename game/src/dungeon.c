@@ -389,7 +389,8 @@ static void draw_switch_door_tile(Texture texture, Rectangle target, const TileM
         // floor left, right door
         src.x = 48;
         src.y = 48;
-}
+    }
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
 static void draw_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
