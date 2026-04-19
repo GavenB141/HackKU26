@@ -77,24 +77,24 @@ int main () {
     Dungeon* dungeon = parse_dungeon(dungeon_text);
     UnloadFileText(dungeon_text);
 
-    Player player = {.body = {.size = {12, 12}}, .health = 3};
-    player.body.position = dungeon->spawn_point;
+    Player* player = make_player();
+    player->body.position = dungeon->spawn_point;
     
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
 
-        update_player(&player, dungeon, dt);
+        update_player(player, dungeon, dt);
         update_camera(dungeon, dt);
-        update_enemies(dungeon->rooms[dungeon->active_room].enemy, &player);
+        update_enemies(dungeon->rooms[dungeon->active_room].enemy, player);
 
         BeginTextureMode(canvas);
         ClearBackground(DARKGRAY);
         BeginMode2D(camera);
         draw_dungeon(dungeon, dt);
         draw_enemies(dungeon->rooms[dungeon->active_room].enemy);
-        draw_player(&player);
+        draw_player(player, dt);
         EndMode2D();
-        draw_hud(&player);
+        draw_hud(player);
         EndTextureMode();
 
         BeginDrawing();
@@ -104,6 +104,7 @@ int main () {
     }
 
     delete_dungeon(dungeon);
+    delete_player(player);
 
     UnloadRenderTexture(canvas);
     CloseWindow();

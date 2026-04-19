@@ -16,6 +16,10 @@ struct Player {
         };
     } body;
 
+    enum Direction {
+        FORWARD, RIGHT, BACKWARD, LEFT
+    } facing;
+
     // Spritesheet
     Texture spritesheet;
 
@@ -23,13 +27,22 @@ struct Player {
     Vector2 dash_velocity;
     float dash_time;
 
+    // Hammer animation times
+    float hammer_charge;
+    float hammer_swing;
+    float hammer_impact;
+
+    // Walk animation state
+    float walk_cycle_time;
+    Vector2 last_translation;
+
     int health;
 };
 
 Player* make_player();
-void delete_player();
+void delete_player(Player* player);
 
-void draw_player(Player* player);
+void draw_player(Player* player, float dt);
 void update_player(Player* player, Dungeon* dungeon, float dt);
 
 #endif
