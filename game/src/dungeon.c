@@ -309,21 +309,42 @@ static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* m
 
     unsigned char wall_bits = get_neighbor_bits(map, '.', x, y);
     
-    if ((wall_bits & 0b01000000) == 0b01000000) {
+    // if ((wall_bits & 0b01000000) == 0b01000000) {
+    //     // floor above, bottom door
+    //     src.x = 16;
+    //     src.y = 16;
+    // }else if ((wall_bits & 0b00000010) == 0b00000010)
+    // {
+    //     // floor below, top door
+    //     src.x = 96;
+    //     src.y = 0;
+    // }else if ((wall_bits & 0b00000000) == 0b00000000)
+    // {
+    //     // floor right, left door
+    //     src.x = 32;
+    //     src.y = 0;
+    // }else if ((wall_bits & 0b00000000) == 0b00000000)
+    // {
+    //     // floor left, right door
+    //     src.x = 32;
+    //     src.y = 16;
+ 
+    // bad door fix
+    }if (x > (map->width-1)/2) {
         // floor above, bottom door
         src.x = 16;
         src.y = 16;
-    }else if ((wall_bits & 0b00000010) == 0b00000010)
+    }else if (x < (map->width-1)/2)
     {
         // floor below, top door
         src.x = 96;
         src.y = 0;
-    }else if ((wall_bits & 0b00000000) == 0b00000000)
+    }else if (y > (map->height-1)/2)
     {
         // floor right, left door
         src.x = 32;
         src.y = 0;
-    }else if ((wall_bits & 0b00000000) == 0b00000000)
+    }else if (y < (map->height-1)/2)
     {
         // floor left, right door
         src.x = 32;
