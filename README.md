@@ -2,19 +2,19 @@
 
 The first AAAA roguelike dungeon crawler where you play as a determined rat armed with an oversized hammer. Your mission? Descend through ever-changing floors of a haunted dungeon to claim the legendary cheese waiting at the bottom.
 
-Ghosts, traps, and procedural chaos stand between you and that glorious wheel. Swing hard, dodge smarter, and you may discover the legendary Cheddar.
+Ghosts, traps, and procedural chaos stand between you and that glorious wheel. Swing hard, dodge fast, and you may discover the legendary Cheddar.
 
 ## Gameplay
 
 - **Procedural Dungeons**: Every descent is unique. Floors are randomly generated with winding corridors, chambers, and surprises.
 - **Combat**: Bash ghosts in a manner that makes no logical sense with your trusty hammer. Timing and positioning matter, as you only get three strikes and your out.
-- **The Goal**: Reach the deepest level and snag the cheese. Simple in concept, brutally replayable in practice.
+- **The Goal**: Reach the deepest level and claim the cheese. Simple in concept, brutally replayable in practice.
 - **Permadeath**: Classic roguelike style. Die, learn, descend again.
 
 ## Key Features
 
 - **Rat**: You're rodent.
-- **Smart Level Generation**: We drew inspiration from evolutionary genetic algorthim approaches to craft dungeons that change every time you decsend. 
+- **Smart Level Generation**: We drew inspiration from evolutionary genetic algorithm approaches to craft dungeons that change every time you descend. 
 - **Ghost-Hammering Action**: Fluid movement and satisfying combat in a top-down view.
 - **Replayability**: New seeds, new layouts, new ways to get absolutely wrecked by ghosts.
 
@@ -34,5 +34,5 @@ The whole thing stays lightweight, runs smoothly in the browser, and still feels
 - Hammer swing: Space 
 - Dash: Left Shift
 
-## [Play the Game](https://gavenb141.github.io/HackKU26/)
+## Play the Game
 https://gavenb141.github.io/HackKU26/
