@@ -163,6 +163,7 @@ void add_dungeon_room(
             new_enemy->position = (Vector2){
                 (origin_x + i % width) * dungeon->renderer->tile_width + dungeon->renderer->tile_width / 2.0,
                 (origin_y + (int)(i / width)) * dungeon->renderer->tile_height + dungeon->renderer->tile_height / 2.0};
+            new_enemy->health = 2;
         } else if (*layout == '?') {
             // Unused tile type
             new_room->map->map[i].type = '.';
@@ -565,6 +566,7 @@ bool cast_attack(Dungeon *dungeon, Vector2 origin, Vector2 target, float radius)
     DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
 
     bool hit_anything = false;
+    // check the tiles
     for (int y = 0; y < room->map->height; y++) {
         for (int x = 0; x < room->map->width; x++) {
             Rectangle tile_frame = {
@@ -577,6 +579,11 @@ bool cast_attack(Dungeon *dungeon, Vector2 origin, Vector2 target, float radius)
                 hit_anything |= attack_tile(dungeon, x, y);
             }
         }
+    }
+    // check the enemies
+    for (Enemy *enemy = room->enemy; enemy != NULL; enemy = enemy->next_enemy)
+    {
+        hit_anything |= try_attack_enemy(enemy, origin, target, radius);
     }
     return hit_anything;
 }
