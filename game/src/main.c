@@ -20,12 +20,18 @@ static struct GameState {
     Texture nums_tex;
     Texture item_tex;
     int dungeon_id;
+    enum
+    {
+        GS_MAIN_MENU,
+        GS_DUNGEON_CRAWL,
+    } screen;
 } state = {
-    .camera =  {
+    .camera = {
         {CANVAS_SIZE.x / 2 - 24, CANVAS_SIZE.y / 2},
         {CANVAS_SIZE.x / 2, CANVAS_SIZE.y / 2},
-        0, 1
-    }
+        0,
+        1},
+    .screen = GS_MAIN_MENU,
 };
 
 static void draw_canvas_scaled_to_screen() {
@@ -115,6 +121,8 @@ int main () {
     state.nums_tex = LoadTexture("assets/numerals.png");
     state.item_tex = LoadTexture("assets/item_tiles.png");
 
+    Texture2D menu_splash = LoadTexture("assets/title.png");
+
     load_random_dungeon();
 
     float elapsed = 0;
@@ -122,22 +130,44 @@ int main () {
         float dt = GetFrameTime();
         elapsed += dt;
 
-        update_player(state.player, state.dungeon, dt);
-        update_camera(dt);
-        update_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy,
-                       state.dungeon,
-                       state.player,
-                       dt);
+        switch (state.screen)
+        {
+        case GS_MAIN_MENU:
+            // render
+            BeginTextureMode(state.canvas);
+            DrawTexture(menu_splash, 0, 0, WHITE);
+            EndTextureMode();
+            // input
+            if (IsKeyReleased(KEY_SPACE))
+            {
+                state.screen = GS_DUNGEON_CRAWL;
+            }
 
-        BeginTextureMode(state.canvas);
-        ClearBackground(DARKGRAY);
-        BeginMode2D(state.camera);
-        draw_dungeon(state.dungeon, dt);
-        draw_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy, elapsed);
-        draw_player(state.player, dt);
-        EndMode2D();
-        draw_hud();
-        EndTextureMode();
+            break;
+        case GS_DUNGEON_CRAWL:
+            update_player(state.player, state.dungeon, dt);
+            update_camera(dt);
+            update_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy,
+                           state.dungeon,
+                           state.player,
+                           dt);
+
+            if (state.player->health <= 0)
+            {
+                state.screen = GS_MAIN_MENU;
+            }
+
+            BeginTextureMode(state.canvas);
+            ClearBackground(DARKGRAY);
+            BeginMode2D(state.camera);
+            draw_dungeon(state.dungeon, dt);
+            draw_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy, elapsed);
+            draw_player(state.player, dt);
+            EndMode2D();
+            draw_hud();
+            EndTextureMode();
+            break;
+        }
 
         BeginDrawing();
         ClearBackground(BLACK);
