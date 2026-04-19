@@ -97,7 +97,6 @@ impl TileKind {
                 | TileKind::LockedDoor
                 | TileKind::SwitchDoor
                 | TileKind::Chest
-                | TileKind::SwitchTile
                 | TileKind::Sign
                 | TileKind::Stairs
                 | TileKind::Spawn
