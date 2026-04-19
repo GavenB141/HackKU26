@@ -26,10 +26,11 @@ pub async fn generate_dungeon_from_seed(Path(seed): Path<u64>) -> impl IntoRespo
                 s.push(match room.get(col, row) {
                     TileKind::Wall => '#',
                     TileKind::Floor => '.',
-                    TileKind::Door => '.',
+                    TileKind::Door => 'D',
                     TileKind::LockedDoor => 'l',
                     TileKind::SwitchDoor => 'd',
-                    TileKind::Pillar | TileKind::Water | TileKind::Pit => '#',
+                    TileKind::Pillar | TileKind::Water  => '#',
+                    TileKind::Pit => 'p',
                     TileKind::Chest => 'k',
                     TileKind::SwitchTile => 's',
                     TileKind::Sign => '?',
