@@ -307,11 +307,29 @@ static void draw_floor_tile(Texture texture, Rectangle target, const TileMap* ma
 static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {32, 0, 16, 16};
 
-    unsigned char wall_bits = get_neighbor_bits(map, '#', x, y);
+    unsigned char wall_bits = get_neighbor_bits(map, '.', x, y);
     
-    if ((wall_bits & 0b00011000) == 0b00011000) {
+    if ((wall_bits & 0b01000000) == 0b01000000) {
+        // floor above, bottom door
         src.x = 16;
+        src.y = 16;
+    }else if ((wall_bits & 0b00000010) == 0b00000010)
+    {
+        // floor below, top door
+        src.x = 16;
+        src.y = 0;
+    }else if ((wall_bits & 0b00000000) == 0b00000000)
+    {
+        // floor right, left door
+        src.x = 32;
+        src.y = 0;
+    }else if ((wall_bits & 0b00000000) == 0b00000000)
+    {
+        // floor left, right door
+        src.x = 32;
+        src.y = 16;
     }
+    
 
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
