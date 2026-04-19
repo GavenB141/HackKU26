@@ -393,8 +393,41 @@ static void draw_switch_door_tile(Texture texture, Rectangle target, const TileM
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
+static void draw_door_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {32, 0, 16, 16};
+
+    unsigned char wall_bits = get_neighbor_bits(map, '.', x, y) ^ get_neighbor_bits(map, 'l', x, y);
+    
+    if ((wall_bits & 0b01000000) == 0b01000000) {
+        // floor above, bottom door
+        src.x = 0;
+        src.y = 48;
+    }else if ((wall_bits & 0b00000010) == 0b00000010)
+    {
+        // floor below, top door
+        src.x = 0;
+        src.y = 32;
+    }else if ((wall_bits & 0b00001000) == 0b00001000)
+    {
+        // floor right, left door
+        src.x = 16;
+        src.y = 32;
+    }else if ((wall_bits & 0b00010000) == 0b00010000)
+    {
+        // floor left, right door
+        src.x = 16;
+        src.y = 48;
+    }
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
+
 static void draw_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {64, 32, 16, 16};
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
+
+static void draw_used_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {64, 48, 16, 16};
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
@@ -407,11 +440,13 @@ Dungeon* make_empty_dungeon() {
     register_tile_type(renderer, '.', wall_texture, draw_floor_tile);
 
     Texture item_texture = LoadTexture("assets/item_tiles.png");
-    register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
     register_tile_type(renderer, 'k', item_texture, draw_chest_tile);
     register_tile_type(renderer, 'X', item_texture, draw_stairs_tile);
+    register_tile_type(renderer, 'D', item_texture, draw_door_tile);
+    register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
     register_tile_type(renderer, 'd', item_texture, draw_switch_door_tile);
     register_tile_type(renderer, 's', item_texture, draw_switch_tile);
+    register_tile_type(renderer, 'S', item_texture, draw_used_switch_tile);
 
     dungeon->renderer = renderer;
     return dungeon;
