@@ -177,10 +177,10 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
     DungeonRoom* active_room = &dungeon->rooms[dungeon->active_room];
     for (int i = 0; i < result.contact_count; i++) {
         DungeonTileContact* c = &result.contacts[i];
-        if (c->tile.type == 'k' && c->tile.meta[0]) {
+        if (c->tile.type == 'k' && c->tile.meta[0] && !c->tile.meta[1]) {
             int lx = c->tx - active_room->origin_x;
             int ly = c->ty - active_room->origin_y;
-            active_room->map->map[ly * active_room->map->width + lx].type = '.';
+            active_room->map->map[ly * active_room->map->width + lx].meta[1] = 1;
             player->keys++;
         }
     }
