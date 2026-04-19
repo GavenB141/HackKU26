@@ -128,7 +128,7 @@ static void draw_hud() {
         Rectangle src = {5 * TILE_SIZE, 0, 16, 16};
         Rectangle target = {canvas_left + (TILE_SIZE * heart), health_offset, 16, 16};
         // draw empty hearts when damaged
-        if (state.player->health < heart) src.y += TILE_SIZE;
+        if (state.player->health <= heart) src.y += TILE_SIZE;
         DrawTexturePro(state.item_tex, src, target, Vector2Zero(), 0, WHITE);
     }
 
