@@ -509,10 +509,6 @@ Dungeon* parse_dungeon(const char* text) {
     return dungeon;
 }
 
-<<<<<<< HEAD
-static bool attack_tile(Dungeon *dungeon, int x, int y)
-{
-=======
 static Tile* get_tile_global(Dungeon* dungeon, int global_tx, int global_ty) {
     for (int i = 0; i < dungeon->num_rooms; i++) {
         DungeonRoom* room = &dungeon->rooms[i];
@@ -534,11 +530,11 @@ bool dungeon_unlock_door(Dungeon* dungeon, int global_tx, int global_ty) {
         Tile* adj = get_tile_global(dungeon, global_tx + dx[i], global_ty + dy[i]);
         if (adj && adj->type == 'l') adj->type = 'D';
     }
+    play_sfx(SFX_DOOR_UNLOCK);
     return true;
 }
 
-static void attack_tile(Dungeon* dungeon, int x, int y) {
->>>>>>> a823eeeb (dungeon load)
+static bool attack_tile(Dungeon *dungeon, int x, int y) {
     DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
     int index = y * room->map->width + x;
     if (index >= room->map->width * room->map->height)
@@ -558,6 +554,7 @@ static void attack_tile(Dungeon* dungeon, int x, int y) {
     if (tile->type == 'k')
     {
         tile->meta[0] = 1;
+        play_sfx(SFX_CHEST_BREAK);
         return true;
     }
     return false;

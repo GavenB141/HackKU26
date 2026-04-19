@@ -182,6 +182,7 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
             int ly = c->ty - active_room->origin_y;
             active_room->map->map[ly * active_room->map->width + lx].meta[1] = 1;
             player->keys++;
+            play_sfx(SFX_GET_KEY);
         }
     }
 

@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define TILE_SIZE 16
+
 static const Vector2 CANVAS_SIZE = {224, 176};
 
 static struct GameState {
@@ -15,6 +17,9 @@ static struct GameState {
     Camera2D camera;
     Player* player;
     Dungeon* dungeon;
+    Texture nums_tex;
+    Texture item_tex;
+    int dungeon_id;
 } state = {
     .camera =  {
         {CANVAS_SIZE.x / 2 - 24, CANVAS_SIZE.y / 2},
@@ -39,44 +44,54 @@ static void draw_canvas_scaled_to_screen() {
         state.canvas.texture, draw_source, draw_target, Vector2Zero(), 0, WHITE);
 }
 
-static void update_camera(const Dungeon* dungeon, float dt) {
-    Rectangle bounds = dungeon_room_bounds(dungeon);
+static void update_camera(float dt) {
+    Rectangle bounds = dungeon_room_bounds(state.dungeon);
     Vector2 target = {bounds.x + bounds.width / 2, bounds.y + bounds.height / 2};
     state.camera.target = Vector2MoveTowards(state.camera.target, target, dt * 1000);
 }
 
-static void draw_hud(const Player *player, Texture texture) {
+static void draw_number(Vector2 first_digit_loc, unsigned int number) {
+    Rectangle src = {0, 0, 7, 8};
+
+    do {
+        int digit = number % 10;
+        src.x = (digit % 5) * 7;
+        src.y = (int)(digit / 5) * 8;
+        DrawTextureRec(state.nums_tex, src, first_digit_loc, WHITE);
+        first_digit_loc.x -= src.width + 1;
+        number /= 10;
+    } while (number);
+}
+
+static void draw_hud() {
     // precalculate relevant positions
     const float canvas_left = CANVAS_SIZE.x - 48;
-    const float canvas_tile_size = 16;
-    const float health_offset = canvas_tile_size * 2;
-    const float key_offset = canvas_tile_size * 4;
+    const float health_offset = TILE_SIZE * 0;
+    const float key_offset = TILE_SIZE * 1;
+
     // UI background
     DrawRectangle(canvas_left, 0, 48, CANVAS_SIZE.y, DARKGRAY);
 
     // Draw the player health status
-    DrawText("HEALTH", canvas_left, canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
-    for (int heart = 0; heart < player->health; heart++)
-    {
-        // draw
-        Rectangle src = {5*canvas_tile_size, 0, 16, 16};
-        Rectangle target = {canvas_left + (canvas_tile_size * heart), health_offset, 16, 16};
-        DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+    for (int heart = 0; heart < state.player->health; heart++) {
+        Rectangle src = {5 * TILE_SIZE, 0, 16, 16};
+        Rectangle target = {canvas_left + (TILE_SIZE * heart), health_offset, 16, 16};
+        DrawTexturePro(state.item_tex, src, target, Vector2Zero(), 0, WHITE);
     }
 
-    // Draw the player health status
-    DrawText("KEYS", canvas_left, 3*canvas_tile_size + 4, canvas_tile_size - 4, WHITE);
-    for (int key = 0; key < player->keys; key++)
-    {
-        // draw
-        Rectangle src = {3*canvas_tile_size, 1*canvas_tile_size, 16, 16};
-        Rectangle target = {canvas_left + (canvas_tile_size * key), key_offset, 16, 16};
-        DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
-    }
+    // Draw player's key count
+    Rectangle src = {3 * TILE_SIZE, TILE_SIZE, 16, 16};
+    Rectangle target = {canvas_left + 4, key_offset, 16, 16};
+    DrawTexturePro(state.item_tex, src, target, Vector2Zero(), 0, WHITE);
+    draw_number((Vector2){CANVAS_SIZE.x - 12, key_offset + 4}, state.player->keys);
+
+    // Draw dungeon id
+    draw_number((Vector2){CANVAS_SIZE.x - 12, CANVAS_SIZE.y - 10}, state.dungeon_id);
 }
 
 static void load_random_dungeon() {
     int rn = rand() % 10000 + 1;
+    state.dungeon_id = rn;
     
     if (!state.player) state.player = make_player();
     if (state.dungeon) delete_dungeon(state.dungeon);
@@ -97,16 +112,17 @@ int main () {
     init_sfx();
 
     state.canvas = LoadRenderTexture(CANVAS_SIZE.x, CANVAS_SIZE.y);
+    state.nums_tex = LoadTexture("assets/numerals.png");
+    state.item_tex = LoadTexture("assets/item_tiles.png");
 
     load_random_dungeon();
 
-    Texture item_texture = LoadTexture("assets/item_tiles.png");
     
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
 
         update_player(state.player, state.dungeon, dt);
-        update_camera(state.dungeon, dt);
+        update_camera(dt);
         update_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy,
                        state.dungeon,
                        state.player,
@@ -119,7 +135,7 @@ int main () {
         draw_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy);
         draw_player(state.player, dt);
         EndMode2D();
-        draw_hud(state.player, item_texture);
+        draw_hud();
         EndTextureMode();
 
         BeginDrawing();
@@ -131,6 +147,8 @@ int main () {
     delete_dungeon(state.dungeon);
     delete_player(state.player);
 
+    UnloadTexture(state.nums_tex);
+    UnloadTexture(state.item_tex);
     UnloadRenderTexture(state.canvas);
     CloseWindow();
 }
