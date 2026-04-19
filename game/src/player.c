@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "player.h"
 #include "dungeon.h"
+#include "sfx.h"
 
 #define HAMMER_CHARGE_TIME 1.0
 #define HAMMER_SWING_TIME  0.025
@@ -152,6 +153,10 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
 static void player_hammer(Player* player, Dungeon* dungeon, float dt) {
     if (player->hammer_swing == 0) {
         if (IsKeyDown(KEY_SPACE)) {
+            if (player->hammer_charge < HAMMER_CHARGE_TIME && player->hammer_charge + dt >= HAMMER_CHARGE_TIME)
+            {
+                play_sfx(SFX_HAMMER_READY);
+            }
             player->hammer_charge += dt;
         } else if (IsKeyReleased(KEY_SPACE)) {
             if (player->hammer_charge >= HAMMER_CHARGE_TIME) {
@@ -174,7 +179,8 @@ static void player_hammer(Player* player, Dungeon* dungeon, float dt) {
             Vector2 center = get_player_center(player);
             player->shockwave_epicenter = Vector2Add(center, offset);
             player->shockwave_duration = HAMMER_SHOCKWAVE_DURATION;
-            cast_attack(dungeon, center, player->shockwave_epicenter, HAMMER_SHOCKWAVE_RADIUS);
+            if (!cast_attack(dungeon, center, player->shockwave_epicenter, HAMMER_SHOCKWAVE_RADIUS))
+                play_sfx(SFX_HAMMER_HIT);
         }
     } else {
         player->hammer_impact -= dt;

@@ -2,6 +2,7 @@
 #include "tiles.h"
 #include "dungeon.h"
 #include "enemy.h"
+#include "sfx.h"
 #include <raylib.h>
 #include <raymath.h>
 
@@ -78,6 +79,8 @@ int main () {
     SetTargetFPS(144);
     SetWindowMinSize(canvas_size.x, canvas_size.y);
     SetWindowState(FLAG_WINDOW_RESIZABLE);
+
+    init_sfx();
 
     canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
 

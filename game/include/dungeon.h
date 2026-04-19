@@ -63,6 +63,6 @@ void add_dungeon_room(
 void draw_dungeon(Dungeon* dungeon, float dt);
 void dungeon_focus(Dungeon* dungeon, Vector2 position);
 Rectangle dungeon_room_bounds(const Dungeon* dungeon);
-void cast_attack(Dungeon* dungeon, Vector2 origin, Vector2 target, float radius);
+bool cast_attack(Dungeon *dungeon, Vector2 origin, Vector2 target, float radius);
 
 #endif

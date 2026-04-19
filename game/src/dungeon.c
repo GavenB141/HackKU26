@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dungeon.h"
+#include "sfx.h"
 
 static DungeonCollisionResult compute_tile_range(
     const DungeonRoom* room,
@@ -507,23 +508,37 @@ Dungeon* parse_dungeon(const char* text) {
     return dungeon;
 }
 
-static void attack_tile(Dungeon* dungeon, int x, int y) {
+static bool attack_tile(Dungeon *dungeon, int x, int y)
+{
     DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
     int index = y * room->map->width + x;
-    if (index >= room->map->width * room->map->height) return;
+    if (index >= room->map->width * room->map->height)
+        return false;
 
     Tile* tile = &room->map->map[index];
 
     if (tile->type == 's') {
         tile->meta[0] = !tile->meta[0];
-    } if (tile->type == 'k') {
-        tile->meta[0] = 1;
+
+        if (tile->meta[0])
+            play_sfx(SFX_SWITCH_PRESSED);
+        else
+            play_sfx(SFX_SWITCH_DEPRESSED);
+        return true;
     }
+    if (tile->type == 'k')
+    {
+        tile->meta[0] = 1;
+        return true;
+    }
+    return false;
 }
 
-void cast_attack(Dungeon* dungeon, Vector2 origin, Vector2 target, float radius) {
+bool cast_attack(Dungeon *dungeon, Vector2 origin, Vector2 target, float radius)
+{
     DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
 
+    bool hit_anything = false;
     for (int y = 0; y < room->map->height; y++) {
         for (int x = 0; x < room->map->width; x++) {
             Rectangle tile_frame = {
@@ -533,9 +548,9 @@ void cast_attack(Dungeon* dungeon, Vector2 origin, Vector2 target, float radius)
             };
 
             if (CheckCollisionCircleRec(target, radius, tile_frame)) {
-                attack_tile(dungeon, x, y);
+                hit_anything |= attack_tile(dungeon, x, y);
             }
         }
     }
+    return hit_anything;
 }
-
