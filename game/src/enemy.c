@@ -88,6 +88,15 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
             enemy->current_state = ENEMY_WANDER;
         }
         break;
+    case ENEMY_STUNNED:
+        // stunned, so drift back to the spot then stop
+        enemy->state_time_left -= dt;
+        enemy->position = Vector2MoveTowards(enemy->position, enemy->stunned_sent_to, 22 * dt);
+        if (enemy->state_time_left <= 0)
+            enemy->current_state = ENEMY_WANDER;
+        break;
+    case ENEMY_DEAD:
+        break;
     }
 
     // recurse to next enemy
@@ -97,7 +106,37 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
 void draw_enemies(Enemy *enemy) {
     if (!enemy) return;
 
-    DrawCircleV(enemy->position, 7, RED);
-    
+    if (enemy->current_state == ENEMY_DEAD)
+    {
+    }
+    else if (enemy->current_state == ENEMY_STUNNED)
+        DrawCircleV(enemy->position, 7, PINK);
+    else
+        DrawCircleV(enemy->position, 7, RED);
+
     draw_enemies(enemy->next_enemy);
+}
+
+bool try_attack_enemy(Enemy *enemy, Vector2 from_point, Vector2 target_point, float radius)
+{
+    if (enemy->current_state == ENEMY_DEAD)
+        return false;
+    if (!CheckCollisionCircles(enemy->position, 7, target_point, radius))
+        return false;
+
+    enemy->health -= 1;
+    if (enemy->health <= 0)
+    {
+        // enemy has died!
+        enemy->current_state = ENEMY_DEAD;
+        play_sfx(SFX_GHOST_DEFEATED);
+        return true;
+    }
+
+    // enemy has been hit and stunned
+    enemy->current_state = ENEMY_STUNNED;
+    enemy->stunned_sent_to = Vector2Scale(Vector2Normalize(Vector2Subtract(from_point, enemy->position)), 32);
+    enemy->state_time_left = 2.12f;
+    play_sfx(SFX_GHOST_INJURED);
+    return true;
 }
