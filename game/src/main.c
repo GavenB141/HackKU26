@@ -1,6 +1,7 @@
 #include "player.h"
 #include "tiles.h"
 #include "dungeon.h"
+#include "enemy.h"
 #include <raylib.h>
 #include <raymath.h>
 
@@ -84,11 +85,13 @@ int main () {
 
         update_player(&player, dungeon, dt);
         update_camera(dungeon, dt);
-        
+        update_enemies(dungeon->rooms[dungeon->active_room].enemy, &player);
+
         BeginTextureMode(canvas);
         ClearBackground(DARKGRAY);
         BeginMode2D(camera);
         draw_dungeon(dungeon, dt);
+        draw_enemies(dungeon->rooms[dungeon->active_room].enemy);
         draw_player(&player);
         EndMode2D();
         draw_hud(&player);

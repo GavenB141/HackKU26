@@ -94,6 +94,14 @@ DungeonCollisionResult dungeon_translate_rect(
 void delete_dungeon(Dungeon* dungeon) {
     for (int i = 0; i < dungeon->num_rooms; i++) {
         delete_tilemap(dungeon->rooms[i].map);
+
+        Enemy *enemy = dungeon->rooms[i].enemy;
+        while (enemy)
+        {
+            Enemy *next_enemy = enemy->next_enemy;
+            free(enemy);
+            enemy = next_enemy;
+        }
     }
     delete_tile_renderer(dungeon->renderer);
     free(dungeon->rooms);
@@ -118,8 +126,10 @@ void add_dungeon_room(
     new_room->origin_x = origin_x;
     new_room->origin_y = origin_y;
     new_room->map = make_tilemap(width, height, layout);
+    new_room->enemy = NULL;
 
-    for (int i = 0; *layout; i++, layout++) {
+    for (int i = 0; *layout && i < width * height; i++, layout++)
+    {
         if (*layout == '\n') {
             i--;
             continue;
@@ -130,6 +140,17 @@ void add_dungeon_room(
                 (origin_x + i % width) * dungeon->renderer->tile_width,
                 (origin_y + (int)(i / width)) * dungeon->renderer->tile_height
             };
+        }
+        else if (*layout == 'e')
+        {
+            Enemy *new_enemy = calloc(1, sizeof(Enemy));
+            // link the list
+            new_enemy->next_enemy = new_room->enemy;
+            new_room->enemy = new_enemy;
+            // place enemy in room by pixels
+            new_enemy->position = (Vector2){
+                (origin_x + i % width) * dungeon->renderer->tile_width + dungeon->renderer->tile_width / 2,
+                (origin_y + (int)(i / width)) * dungeon->renderer->tile_height + dungeon->renderer->tile_height / 2};
         }
     }
 }
@@ -351,7 +372,6 @@ Dungeon* make_empty_dungeon() {
     Texture wall_texture = LoadTexture("assets/map_tiles.png");
     register_tile_type(renderer, '#', wall_texture, draw_wall_tile);
     register_tile_type(renderer, '.', wall_texture, draw_floor_tile);
-    register_tile_type(renderer, '@', wall_texture, draw_floor_tile);
 
     Texture item_texture = LoadTexture("assets/item_tiles.png");
     register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
