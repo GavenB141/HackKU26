@@ -46,9 +46,10 @@ static bool is_blocking(char tiletype, const char* blocking) {
 
 bool default_blocking_fn(Tile tile) {
     switch (tile.type) {
-        case '#': case 'd': case 'k': case 'l': case 's':
+        case '#': case 'd': case 'l': case 's':
         case 'p':
         return true;
+        case 'k': return !tile.meta[0];
         default:
         return false;
     }
@@ -508,8 +509,36 @@ Dungeon* parse_dungeon(const char* text) {
     return dungeon;
 }
 
+<<<<<<< HEAD
 static bool attack_tile(Dungeon *dungeon, int x, int y)
 {
+=======
+static Tile* get_tile_global(Dungeon* dungeon, int global_tx, int global_ty) {
+    for (int i = 0; i < dungeon->num_rooms; i++) {
+        DungeonRoom* room = &dungeon->rooms[i];
+        int lx = global_tx - room->origin_x;
+        int ly = global_ty - room->origin_y;
+        if (lx >= 0 && ly >= 0 && lx < room->map->width && ly < room->map->height)
+            return &room->map->map[ly * room->map->width + lx];
+    }
+    return NULL;
+}
+
+bool dungeon_unlock_door(Dungeon* dungeon, int global_tx, int global_ty) {
+    Tile* tile = get_tile_global(dungeon, global_tx, global_ty);
+    if (!tile || tile->type != 'l') return false;
+    tile->type = 'D';
+    int dx[] = {0, 0, -1, 1};
+    int dy[] = {-1, 1, 0, 0};
+    for (int i = 0; i < 4; i++) {
+        Tile* adj = get_tile_global(dungeon, global_tx + dx[i], global_ty + dy[i]);
+        if (adj && adj->type == 'l') adj->type = 'D';
+    }
+    return true;
+}
+
+static void attack_tile(Dungeon* dungeon, int x, int y) {
+>>>>>>> a823eeeb (dungeon load)
     DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
     int index = y * room->map->width + x;
     if (index >= room->map->width * room->map->height)
