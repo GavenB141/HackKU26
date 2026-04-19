@@ -73,7 +73,7 @@ int main () {
 
     canvas = LoadRenderTexture(canvas_size.x, canvas_size.y);
 
-    char* dungeon_text = LoadFileText("assets/sample_dungeon.txt");
+    char* dungeon_text = LoadFileText("assets/dungeons/2");
     Dungeon* dungeon = parse_dungeon(dungeon_text);
     UnloadFileText(dungeon_text);
 

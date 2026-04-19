@@ -46,6 +46,7 @@ static bool is_blocking(char tiletype, const char* blocking) {
 bool default_blocking_fn(Tile tile) {
     switch (tile.type) {
         case '#': case 'd': case 'k': case 'l': case 's':
+        case 'p':
         return true;
         default:
         return false;
@@ -138,7 +139,6 @@ void add_dungeon_room(
     new_room->origin_y = origin_y;
     new_room->map = make_tilemap(width, height, layout);
     new_room->enemy = NULL;
-    new_room->num_sigs = 0;
 
     for (int i = 0; *layout && i < width * height; i++, layout++)
     {
@@ -152,9 +152,7 @@ void add_dungeon_room(
                 (origin_x + i % width) * dungeon->renderer->tile_width,
                 (origin_y + (int)(i / width)) * dungeon->renderer->tile_height
             };
-        }
-        else if (*layout == 'e')
-        {
+        } else if (*layout == 'e') {
             Enemy *new_enemy = calloc(1, sizeof(Enemy));
             // link the list
             new_enemy->next_enemy = new_room->enemy;
@@ -163,6 +161,11 @@ void add_dungeon_room(
             new_enemy->position = (Vector2){
                 (origin_x + i % width) * dungeon->renderer->tile_width + dungeon->renderer->tile_width / 2.0,
                 (origin_y + (int)(i / width)) * dungeon->renderer->tile_height + dungeon->renderer->tile_height / 2.0};
+        } else if (*layout == '?') {
+            // Unused tile type
+            new_room->map->map[i].type = '.';
+        } else if (*layout == 'd') {
+            new_room->map->map[i].type = 'D';
         }
     }
 }
@@ -369,6 +372,10 @@ static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* m
 
 static void draw_chest_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {64, 0, 16, 16};
+    Tile tile = get_tile(map, x, y);
+    if (tile.meta[0]) {
+        src.x -= 16;
+    }
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
@@ -493,28 +500,6 @@ Dungeon* parse_dungeon(const char* text) {
             if (text[-1] == '\n' && text[0] == '\n') {
                 stage = PARSE_Y;
             }
-
-            if (strncmp("switch", text, 6) == 0 || strncmp("door", text, 4) == 0) {
-                while(*(++text) != '\0' && *text != ':');
-                bool readnum = false;
-                int sig = 0;
-                while(*(++text) != '\0' && *text != '\n') {
-                    if (*text == ' ' && readnum) {
-                        assert(sig < 32);
-                        room->switch_signals[room->num_sigs++] = sig;
-                        readnum = false;
-                        sig = 0;
-                    } else {
-                        sig *= 10;
-                        sig += *text - '0';
-                        readnum = true;
-                    }
-                }
-                if (readnum) {
-                    assert(sig < 32);
-                    room->switch_signals[room->num_sigs++] = sig;
-                }
-            }
         }
     }
     return dungeon;
@@ -529,10 +514,8 @@ static void attack_tile(Dungeon* dungeon, int x, int y) {
 
     if (tile->type == 's') {
         tile->meta[0] = !tile->meta[0];
-        for (int i = 0; i < room->num_sigs; i++) {
-            dungeon->switch_signals[room->switch_signals[i]] =
-                !dungeon->switch_signals[room->switch_signals[i]];
-        }
+    } if (tile->type == 'k') {
+        tile->meta[0] = 1;
     }
 }
 

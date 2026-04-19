@@ -11,9 +11,6 @@ struct DungeonRoom {
     TileMap* map;
     int origin_x, origin_y;
     Enemy* enemy;
-
-    char switch_signals[32];
-    int num_sigs;
 };
 
 struct Dungeon {
@@ -22,8 +19,6 @@ struct Dungeon {
     int num_rooms;
     int active_room;
     Vector2 spawn_point;
-
-    bool switch_signals[32];
 
     // for animating
     int previous_room;
