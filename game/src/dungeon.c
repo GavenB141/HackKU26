@@ -328,7 +328,7 @@ static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* m
         // floor left, right door
         src.x = 32;
         src.y = 16;
- 
+    }
     
 
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
