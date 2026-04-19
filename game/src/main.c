@@ -223,6 +223,10 @@ int main () {
             if (state.player->health <= 0)
             {
                 state.screen = GS_MAIN_MENU;
+                delete_player(state.player);
+                state.player = NULL;
+                state.level_number = 0;
+                load_random_dungeon();
             }
 
             BeginTextureMode(state.canvas);
