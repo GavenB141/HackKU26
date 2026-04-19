@@ -2,6 +2,8 @@
 #include "sfx.h"
 #include "player.h"
 
+#include <math.h>
+#include <raylib.h>
 #include <stddef.h>
 #include <raymath.h>
 
@@ -50,6 +52,7 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
 
         // apply the movement
         move_direction = Vector2Normalize(move_direction);
+        enemy->charge_dir = move_direction;
         enemy->position = Vector2Add(enemy->position, Vector2Scale(move_direction, dt * wander_speed));
 
         // potentially prepare a charge
@@ -97,6 +100,7 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
             enemy->current_state = ENEMY_WANDER;
         break;
     case ENEMY_DEAD:
+        enemy->state_time_left -= dt;
         break;
     }
 
@@ -113,18 +117,51 @@ void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float 
     update_enemies(enemy->next_enemy, dungeon, player, dt);
 }
 
-void draw_enemies(Enemy *enemy) {
+#define ENEMY_FRAME_PERIOD 0.75
+
+void draw_enemies(Enemy *enemy, float elapsed) {
+    static Texture tex = {0};
+    if (tex.id == 0)
+        tex = LoadTexture("assets/ghoober.png");
+
     if (!enemy) return;
 
-    if (enemy->current_state == ENEMY_DEAD)
-    {
-    }
-    else if (enemy->current_state == ENEMY_STUNNED)
-        DrawCircleV(enemy->position, 7, PINK);
-    else
-        DrawCircleV(enemy->position, 7, RED);
+    if (enemy->current_state != ENEMY_DEAD || enemy->state_time_left >= 0) {
+        float time = fmodf(elapsed, ENEMY_FRAME_PERIOD);
+        int frame;
+        if (time < ENEMY_FRAME_PERIOD / 3.0)
+            frame = 0;
+        else if (time < 2 * ENEMY_FRAME_PERIOD / 3.0)
+            frame = 1;
+        else
+            frame = 2;
 
-    draw_enemies(enemy->next_enemy);
+        Color tint = WHITE;
+
+        if (enemy->current_state == ENEMY_CHARGING) {
+            frame += 3;
+        } else if (enemy->current_state == ENEMY_STUNNED) {
+            frame += 6;
+            tint = PINK;
+        } else if (enemy->current_state == ENEMY_DEAD) {
+            frame += 6;
+            float flash = fmodf(enemy->state_time_left, 0.1);
+            if (flash > 0.05) {
+                tint = PINK;
+            }
+        }
+
+        Rectangle src = {frame * 16, 0, 16, 16};
+        Rectangle target = {enemy->position.x - 8, enemy->position.y - 8, 16, 16};
+
+        if (enemy->charge_dir.x > 0) {
+            src.y += 16;
+        }
+
+        DrawTexturePro(tex, src, target, Vector2Zero(), 0, tint);
+    }
+
+    draw_enemies(enemy->next_enemy, elapsed + ENEMY_FRAME_PERIOD / 3.0);
 }
 
 bool try_attack_enemy(Enemy *enemy, Vector2 from_point, Vector2 target_point, float radius)
@@ -139,6 +176,7 @@ bool try_attack_enemy(Enemy *enemy, Vector2 from_point, Vector2 target_point, fl
     {
         // enemy has died!
         enemy->current_state = ENEMY_DEAD;
+        enemy->state_time_left = 0.5;
         play_sfx(SFX_GHOST_DEFEATED);
         return true;
     }

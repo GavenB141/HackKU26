@@ -21,16 +21,13 @@ struct Enemy
 {
     Enemy *next_enemy;
     Vector2 position;
-    union
-    {
-        Vector2 charge_dir;
-        Vector2 stunned_sent_to;
-    };
+    Vector2 charge_dir;
+    Vector2 stunned_sent_to;
     float state_time_left;
     EnemyState current_state;
     int health;
 };
 void update_enemies(Enemy *enemy, const Dungeon *dungeon, Player *player, float dt);
-void draw_enemies(Enemy *enemy);
+void draw_enemies(Enemy *enemy, float elapsed);
 bool try_attack_enemy(Enemy *enemy, Vector2 from_point, Vector2 target_point, float radius);
 #endif
