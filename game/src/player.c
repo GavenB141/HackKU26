@@ -146,7 +146,7 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
         {
             player->dash_time = Clamp(player->dash_time + dt, -dash_cooldown, 0);
         }
-        else if (player->hammer_charge == 0 && IsKeyDown(KEY_LEFT_SHIFT))
+        else if (player->hammer_charge == 0 && IsKeyPressed(KEY_LEFT_SHIFT))
         {
             player->dash_velocity = Vector2Scale(vel, 3);
             player->dash_time = 0.15;

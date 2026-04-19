@@ -407,6 +407,15 @@ static void draw_chest_tile(Texture texture, Rectangle target, const TileMap* ma
 
 static void draw_stairs_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {96, 0, 16, 16};
+    //Flips stairs to ensure floor tile in front
+    unsigned char wall_bits = get_neighbor_bits(map, '.', x, y);
+    if ((wall_bits & 0b00010000) == 0b00010000){
+        src.y+=16;
+    }
+    //Checks if should be open
+    Tile tile = get_tile(map, x, y);
+    if (tile.meta[0]) src.y += 32;
+
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
