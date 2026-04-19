@@ -123,10 +123,12 @@ static void draw_hud() {
     DrawText("Lvl", canvas_left + 4, level_offset + 3, 10, WHITE);
     draw_number((Vector2){CANVAS_SIZE.x - 8, level_offset + 3}, state.level_number);
 
-    // Draw the player health status
-    for (int heart = 0; heart < state.player->health; heart++) {
+    // Draw the player health status 
+    for (int heart = 0; heart < 3; heart++) {
         Rectangle src = {5 * TILE_SIZE, 0, 16, 16};
         Rectangle target = {canvas_left + (TILE_SIZE * heart), health_offset, 16, 16};
+        // draw empty hearts when damaged
+        if (state.player->health < heart) src.y += TILE_SIZE;
         DrawTexturePro(state.item_tex, src, target, Vector2Zero(), 0, WHITE);
     }
 
