@@ -316,7 +316,7 @@ static void draw_locked_tile(Texture texture, Rectangle target, const TileMap* m
     }else if ((wall_bits & 0b00000010) == 0b00000010)
     {
         // floor below, top door
-        src.x = 96;
+        src.x = 16;
         src.y = 0;
     }else if ((wall_bits & 0b00000000) == 0b00000000)
     {
@@ -339,6 +339,11 @@ static void draw_chest_tile(Texture texture, Rectangle target, const TileMap* ma
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
+static void draw_stairs_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
+    Rectangle src = {96, 0, 16, 16};
+    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
+}
+
 Dungeon* make_empty_dungeon() {
     Dungeon* dungeon = calloc(1, sizeof(Dungeon));
     TileRenderer* renderer = make_tile_renderer(16, 16);
@@ -351,6 +356,7 @@ Dungeon* make_empty_dungeon() {
     Texture item_texture = LoadTexture("assets/item_tiles.png");
     register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
     register_tile_type(renderer, 'k', item_texture, draw_chest_tile);
+    register_tile_type(renderer, 'X', item_texture, draw_stairs_tile);
 
     dungeon->renderer = renderer;
     return dungeon;
