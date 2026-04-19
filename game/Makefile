@@ -19,7 +19,7 @@ EXTRA_INC ?=
 EXTRA_LIB ?=
 
 CC ?= gcc
-FFLAGS := -fsanitize=address
+FFLAGS := -fsanitize=address -g
 LDFLAGS := $(EXTRA_LIB) -lraylib -lm
 
 $(OUTPUT): $(OBJECTS)

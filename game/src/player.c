@@ -6,9 +6,11 @@
 #include "dungeon.h"
 
 #define HAMMER_CHARGE_TIME 1.0
-#define HAMMER_SWING_TIME  0.05
-#define HAMMER_IMPACT_TIME 0.3
+#define HAMMER_SWING_TIME  0.025
+#define HAMMER_IMPACT_TIME 0.4
 #define HAMMER_FLASH_PERIOD 0.05
+#define HAMMER_SHOCKWAVE_RADIUS 18.0
+#define HAMMER_SHOCKWAVE_DURATION 0.15
 #define PLAYER_WALK_PERIOD 0.1
 
 Player* make_player() {
@@ -22,6 +24,10 @@ Player* make_player() {
 void delete_player(Player *player) {
     UnloadTexture(player->spritesheet);
     free(player);
+}
+
+Vector2 get_player_center(const Player* player) {
+    return Vector2Add(player->body.position, Vector2Scale(player->body.size, 0.5));
 }
 
 void draw_player(Player* player, float dt) {
@@ -65,6 +71,17 @@ void draw_player(Player* player, float dt) {
     Rectangle target = player->body.aabb;
     target.width = 48;
     target.height = 48;
+
+    if (player->shockwave_duration > 0) {
+        player->shockwave_duration -= dt;
+        float radius = HAMMER_SHOCKWAVE_RADIUS *
+            ((HAMMER_SHOCKWAVE_DURATION - player->shockwave_duration) / HAMMER_SHOCKWAVE_DURATION);
+        float alpha = player->shockwave_duration / HAMMER_SHOCKWAVE_DURATION;
+        DrawCircleV(
+            player->shockwave_epicenter,
+            radius, ColorAlpha(DARKGRAY, alpha)
+        );
+    }
 
     DrawTexturePro(
         player->spritesheet,
@@ -113,7 +130,7 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
         if (player->dash_time < 0) {
             player->dash_time = Clamp(player->dash_time + dt, -dash_cooldown, 0);
         } else if (player->hammer_charge == 0 && IsKeyDown(KEY_LEFT_SHIFT)) {
-            player->dash_velocity = Vector2Scale(vel, 4);
+            player->dash_velocity = Vector2Scale(vel, 3);
             player->dash_time = 0.15;
         }
     }
@@ -122,7 +139,7 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
     resolve_player_direction(player, vel);
 
     DungeonCollisionResult result = dungeon_translate_rect(
-        dungeon, player->body.aabb, vel, "#");
+        dungeon, player->body.aabb, vel, 0);
 
     player->last_translation = Vector2Subtract(*(Vector2*)&result.resolved, player->body.position);
     player->body.aabb = result.resolved;
@@ -132,7 +149,7 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
     );
 }
 
-static void player_hammer(Player* player, float dt) {
+static void player_hammer(Player* player, Dungeon* dungeon, float dt) {
     if (player->hammer_swing == 0) {
         if (IsKeyDown(KEY_SPACE)) {
             player->hammer_charge += dt;
@@ -147,6 +164,17 @@ static void player_hammer(Player* player, float dt) {
         player->hammer_swing -= dt;
         if (player->hammer_swing <= 0) {
             player->hammer_impact = HAMMER_IMPACT_TIME + player->hammer_swing;
+            Vector2 offset;
+            switch (player->facing) {
+                case FORWARD:  offset = (Vector2){0, 10}; break;
+                case RIGHT:    offset = (Vector2){13.5, 6}; break;
+                case BACKWARD: offset = (Vector2){0,-10}; break;
+                case LEFT:     offset = (Vector2){-13.5,6}; break;
+            }
+            Vector2 center = get_player_center(player);
+            player->shockwave_epicenter = Vector2Add(center, offset);
+            player->shockwave_duration = HAMMER_SHOCKWAVE_DURATION;
+            cast_attack(dungeon, center, player->shockwave_epicenter, HAMMER_SHOCKWAVE_RADIUS);
         }
     } else {
         player->hammer_impact -= dt;
@@ -160,11 +188,11 @@ static void player_hammer(Player* player, float dt) {
 
 void update_player(Player* player, Dungeon* dungeon, float dt) {
     if (player->dash_time <= 0)
-        player_hammer(player, dt);
+        player_hammer(player, dungeon, dt);
 
     const float speed =
         player->hammer_charge == 0 ? 80 :
-        player->hammer_swing == 0 && player->hammer_impact == 0 ? 15 : 0;
+        player->hammer_swing == 0 && player->hammer_impact == 0 ? 10 : 0;
 
     move_player(player, dungeon, dt, speed);
 }

@@ -4,6 +4,7 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <stdlib.h>
+#include <string.h>
 #include "dungeon.h"
 
 static DungeonCollisionResult compute_tile_range(
@@ -42,13 +43,23 @@ static bool is_blocking(char tiletype, const char* blocking) {
     return false;
 }
 
+bool default_blocking_fn(Tile tile) {
+    switch (tile.type) {
+        case '#': case 'd': case 'k': case 'l': case 's':
+        return true;
+        default:
+        return false;
+    }
+}
+
 DungeonCollisionResult dungeon_translate_rect(
     const Dungeon* dungeon,
     Rectangle initial,
     Vector2 translation,
-    const char* blocking_tiles
+    bool (*is_blocking_fn)(Tile tile)
 ) {
     if (dungeon->num_rooms == 0) return (DungeonCollisionResult){0};
+    if (is_blocking_fn == NULL) is_blocking_fn = default_blocking_fn;
 
     const TileRenderer* rdr = dungeon->renderer;
     const DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
@@ -59,7 +70,7 @@ DungeonCollisionResult dungeon_translate_rect(
 
     for (int i = 0; i < result.contact_count; i++) {
         const DungeonTileContact* contact = &result.contacts[i];
-        if (!is_blocking(contact->tile.type, blocking_tiles)) continue;
+        if (!is_blocking_fn(contact->tile)) continue;
         if (translation.x > 0) {
             float resolved_x = contact->tx * rdr->tile_width - initial.width;
             if (resolved_x < candidate.x) candidate.x = resolved_x;
@@ -74,7 +85,7 @@ DungeonCollisionResult dungeon_translate_rect(
         room, candidate, rdr->tile_width, rdr->tile_height);
     for (int i = 0; i < result.contact_count; i++) {
         const DungeonTileContact* contact = &result.contacts[i];
-        if (!is_blocking(contact->tile.type, blocking_tiles)) continue;
+        if (!is_blocking_fn(contact->tile)) continue;
         if (translation.y > 0) {
             float resolved_y = contact->ty * rdr->tile_height - initial.height;
             if (resolved_y < candidate.y) candidate.y = resolved_y;
@@ -127,6 +138,7 @@ void add_dungeon_room(
     new_room->origin_y = origin_y;
     new_room->map = make_tilemap(width, height, layout);
     new_room->enemy = NULL;
+    new_room->num_sigs = 0;
 
     for (int i = 0; *layout && i < width * height; i++, layout++)
     {
@@ -149,8 +161,8 @@ void add_dungeon_room(
             new_room->enemy = new_enemy;
             // place enemy in room by pixels
             new_enemy->position = (Vector2){
-                (origin_x + i % width) * dungeon->renderer->tile_width + dungeon->renderer->tile_width / 2,
-                (origin_y + (int)(i / width)) * dungeon->renderer->tile_height + dungeon->renderer->tile_height / 2};
+                (origin_x + i % width) * dungeon->renderer->tile_width + dungeon->renderer->tile_width / 2.0,
+                (origin_y + (int)(i / width)) * dungeon->renderer->tile_height + dungeon->renderer->tile_height / 2.0};
         }
     }
 }
@@ -422,16 +434,13 @@ static void draw_door_tile(Texture texture, Rectangle target, const TileMap* map
 }
 
 static void draw_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
-    Rectangle src = {64, 32, 16, 16};
-    DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
-}
-
-static void draw_used_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {64, 48, 16, 16};
+    Tile tile = get_tile(map, x, y);
+    if (tile.meta[0]) src.y -= 16;
     DrawTexturePro(texture, src, target, Vector2Zero(), 0, WHITE);
 }
 
-Dungeon* make_empty_dungeon() {
+static Dungeon* make_empty_dungeon() {
     Dungeon* dungeon = calloc(1, sizeof(Dungeon));
     TileRenderer* renderer = make_tile_renderer(16, 16);
 
@@ -446,7 +455,6 @@ Dungeon* make_empty_dungeon() {
     register_tile_type(renderer, 'l', item_texture, draw_locked_tile);
     register_tile_type(renderer, 'd', item_texture, draw_switch_door_tile);
     register_tile_type(renderer, 's', item_texture, draw_switch_tile);
-    register_tile_type(renderer, 'S', item_texture, draw_used_switch_tile);
 
     dungeon->renderer = renderer;
     return dungeon;
@@ -454,6 +462,7 @@ Dungeon* make_empty_dungeon() {
 
 Dungeon* parse_dungeon(const char* text) {
     Dungeon* dungeon = make_empty_dungeon();
+    DungeonRoom* room = 0;
     int x = 0, y = 0;
     
     enum ParseStage {
@@ -475,15 +484,73 @@ Dungeon* parse_dungeon(const char* text) {
             }
         } else if (stage == PARSE_ROOM) {
             add_dungeon_room(dungeon, x * 11, y * 11, 11, 11, text);
+            room = &dungeon->rooms[dungeon->num_rooms - 1];
             x = 0;
             y = 0;
             text += 11 * 11; // saves time
             stage = PARSE_META;
         } else if (stage == PARSE_META) {
-            if (text[-1] == '\n' && *text == '\n') {
+            if (text[-1] == '\n' && text[0] == '\n') {
                 stage = PARSE_Y;
+            }
+
+            if (strncmp("switch", text, 6) == 0 || strncmp("door", text, 4) == 0) {
+                while(*(++text) != '\0' && *text != ':');
+                bool readnum = false;
+                int sig = 0;
+                while(*(++text) != '\0' && *text != '\n') {
+                    if (*text == ' ' && readnum) {
+                        assert(sig < 32);
+                        room->switch_signals[room->num_sigs++] = sig;
+                        readnum = false;
+                        sig = 0;
+                    } else {
+                        sig *= 10;
+                        sig += *text - '0';
+                        readnum = true;
+                    }
+                }
+                if (readnum) {
+                    assert(sig < 32);
+                    room->switch_signals[room->num_sigs++] = sig;
+                }
             }
         }
     }
     return dungeon;
 }
+
+static void attack_tile(Dungeon* dungeon, int x, int y) {
+    DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
+    int index = y * room->map->width + x;
+    if (index >= room->map->width * room->map->height) return;
+
+    Tile* tile = &room->map->map[index];
+
+    if (tile->type == 's') {
+        tile->meta[0] = !tile->meta[0];
+        for (int i = 0; i < room->num_sigs; i++) {
+            dungeon->switch_signals[room->switch_signals[i]] =
+                !dungeon->switch_signals[room->switch_signals[i]];
+        }
+    }
+}
+
+void cast_attack(Dungeon* dungeon, Vector2 origin, Vector2 target, float radius) {
+    DungeonRoom* room = &dungeon->rooms[dungeon->active_room];
+
+    for (int y = 0; y < room->map->height; y++) {
+        for (int x = 0; x < room->map->width; x++) {
+            Rectangle tile_frame = {
+                (room->origin_x + x) * dungeon->renderer->tile_width,
+                (room->origin_y + y) * dungeon->renderer->tile_height,
+                dungeon->renderer->tile_width, dungeon->renderer->tile_height
+            };
+
+            if (CheckCollisionCircleRec(target, radius, tile_frame)) {
+                attack_tile(dungeon, x, y);
+            }
+        }
+    }
+}
+

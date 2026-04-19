@@ -10,7 +10,10 @@ typedef struct Dungeon Dungeon;
 struct DungeonRoom {
     TileMap* map;
     int origin_x, origin_y;
-    Enemy *enemy;
+    Enemy* enemy;
+
+    char switch_signals[32];
+    int num_sigs;
 };
 
 struct Dungeon {
@@ -19,6 +22,8 @@ struct Dungeon {
     int num_rooms;
     int active_room;
     Vector2 spawn_point;
+
+    bool switch_signals[32];
 
     // for animating
     int previous_room;
@@ -43,14 +48,15 @@ struct DungeonCollisionResult {
     int contact_count;
 };
 
+bool default_blocking_fn(Tile tile);
+
 DungeonCollisionResult dungeon_translate_rect(
     const Dungeon* dungeon,
     Rectangle init,
     Vector2 translation,
-    const char* blocking_tiles
+    bool (*is_blocking_fn)(Tile tile)
 );
 
-Dungeon* make_empty_dungeon();
 Dungeon* parse_dungeon(const char* text);
 void delete_dungeon(Dungeon* dungeon);
 void add_dungeon_room(
@@ -62,5 +68,6 @@ void add_dungeon_room(
 void draw_dungeon(Dungeon* dungeon, float dt);
 void dungeon_focus(Dungeon* dungeon, Vector2 position);
 Rectangle dungeon_room_bounds(const Dungeon* dungeon);
+void cast_attack(Dungeon* dungeon, Vector2 origin, Vector2 target, float radius);
 
 #endif

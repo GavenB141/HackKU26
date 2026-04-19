@@ -32,6 +32,10 @@ struct Player {
     float hammer_swing;
     float hammer_impact;
 
+    // Shockwave effect
+    Vector2 shockwave_epicenter;
+    float shockwave_duration;
+
     // Walk animation state
     float walk_cycle_time;
     Vector2 last_translation;
