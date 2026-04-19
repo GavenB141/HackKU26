@@ -85,7 +85,10 @@ int main () {
 
         update_player(player, dungeon, dt);
         update_camera(dungeon, dt);
-        update_enemies(dungeon->rooms[dungeon->active_room].enemy, player);
+        update_enemies(dungeon->rooms[dungeon->active_room].enemy,
+                       dungeon,
+                       player,
+                       dt);
 
         BeginTextureMode(canvas);
         ClearBackground(DARKGRAY);
