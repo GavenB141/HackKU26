@@ -111,6 +111,11 @@ static void resolve_player_direction(Player* player, Vector2 move_dir) {
     else if (move_dir.x > 0) player->facing = RIGHT;
 }
 
+static bool dash_blocking_fn(Tile tile) {
+    if (tile.type == 'p') return false;
+    return default_blocking_fn(tile);
+}
+
 static void move_player(Player* player, Dungeon* dungeon, float dt, float speed) {
     const float dash_cooldown = 0.35;
     Vector2 vel = Vector2Zero();
@@ -187,8 +192,11 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
         }
     }
 
+    bool (*blocking_fn)(Tile tile) = default_blocking_fn;
+    if (player->dash_time > 0)
+        blocking_fn = dash_blocking_fn;
     DungeonCollisionResult result = dungeon_translate_rect(
-        dungeon, player->body.aabb, vel, 0);
+        dungeon, player->body.aabb, vel, blocking_fn);
 
     // Pick up keys from opened chests (k tiles with meta[0] set)
     DungeonRoom* active_room = &dungeon->rooms[dungeon->active_room];

@@ -165,8 +165,9 @@ void add_dungeon_room(
                 (origin_y + (int)(i / width)) * dungeon->renderer->tile_height + dungeon->renderer->tile_height / 2.0};
             new_enemy->health = 2;
         } else if (*layout == '?') {
-            // Unused tile type
             new_room->map->map[i].type = '.';
+        } else if (*layout == 'p') {
+            new_room->map->map[i].type = '#';
         } else if (*layout == 'd') {
             new_room->map->map[i].type = 'D';
         }

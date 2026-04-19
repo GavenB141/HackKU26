@@ -117,9 +117,10 @@ int main () {
 
     load_random_dungeon();
 
-    
+    float elapsed = 0;
     while (!WindowShouldClose()) {
         float dt = GetFrameTime();
+        elapsed += dt;
 
         update_player(state.player, state.dungeon, dt);
         update_camera(dt);
@@ -132,7 +133,7 @@ int main () {
         ClearBackground(DARKGRAY);
         BeginMode2D(state.camera);
         draw_dungeon(state.dungeon, dt);
-        draw_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy);
+        draw_enemies(state.dungeon->rooms[state.dungeon->active_room].enemy, elapsed);
         draw_player(state.player, dt);
         EndMode2D();
         draw_hud();
