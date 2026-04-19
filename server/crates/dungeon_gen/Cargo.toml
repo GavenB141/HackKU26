@@ -1,0 +1,21 @@
+[package]
+name = "dungeon_gen"
+version = "0.1.0"
+edition = "2021"
+description = "Seeded procedural dungeon generator (Pereira et al. 2021 CEA)"
+license = "MIT"
+authors = ["Claude Sonnet 4.6"]
+
+[lib]
+name = "dungeon_gen"
+path = "src/lib.rs"
+
+[[example]]
+name = "generate_dungeon"
+path = "examples/generate_dungeon.rs"
+
+[dependencies]
+# No external dependencies — fully self-contained.
+
+[dev-dependencies]
+# None needed for the example.

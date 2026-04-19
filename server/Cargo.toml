@@ -1,0 +1,20 @@
+[package]
+name = "hackku26"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[profile.dev.package."*"]
+opt-level = 2
+
+
+[dependencies]
+axum = "0.8.9"
+dungeon_gen = { version = "0.1.0", path = "crates/dungeon_gen" }
+tokio = { version = "1.52.1", features = ["full"] }
+tower-http = { version = "0.6.8", features = ["trace"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+
+[workspace]
+members = ["crates/dungeon_gen"]
