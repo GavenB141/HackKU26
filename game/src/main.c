@@ -90,7 +90,7 @@ static void draw_hud() {
 }
 
 static void load_random_dungeon() {
-    int rn = rand() % 10000 + 1;
+    int rn = rand() % 166 + 1;
     state.dungeon_id = rn;
     
     if (!state.player) state.player = make_player();
