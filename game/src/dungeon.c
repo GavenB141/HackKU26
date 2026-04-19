@@ -390,6 +390,7 @@ static void draw_switch_door_tile(Texture texture, Rectangle target, const TileM
         src.x = 48;
         src.y = 48;
 }
+}
 
 static void draw_switch_tile(Texture texture, Rectangle target, const TileMap* map, int x, int y) {
     Rectangle src = {64, 32, 16, 16};
