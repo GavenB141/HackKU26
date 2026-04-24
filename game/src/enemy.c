@@ -104,12 +104,13 @@ static void update_enemies_impl(Enemy *enemy, const Enemy *first_enemy, const Du
     case ENEMY_STUNNED:
         // stunned, so drift back to the spot then stop
         enemy->state_time_left -= dt;
-        enemy->position = Vector2MoveTowards(enemy->position, enemy->stunned_sent_to, 22 * dt);
+        enemy->position = Vector2MoveTowards(enemy->position, enemy->stunned_sent_to, 200 * dt);
         if (enemy->state_time_left <= 0)
             enemy->current_state = ENEMY_WANDER;
         break;
     case ENEMY_DEAD:
         enemy->state_time_left -= dt;
+        enemy->position = Vector2MoveTowards(enemy->position, enemy->stunned_sent_to, 200 * dt);
         break;
     }
 
@@ -147,7 +148,7 @@ void draw_enemies(Enemy *enemy, float elapsed) {
 
         Color tint = WHITE;
 
-        if (enemy->current_state == ENEMY_CHARGING) {
+        if (enemy->current_state == ENEMY_CHARGE_PREPARE) {
             frame += 3;
         } else if (enemy->current_state == ENEMY_STUNNED) {
             frame += 6;
@@ -175,25 +176,40 @@ void draw_enemies(Enemy *enemy, float elapsed) {
 
 bool try_attack_enemy(Enemy *enemy, Vector2 from_point, Vector2 target_point, float radius)
 {
-    if (enemy->current_state == ENEMY_DEAD)
-        return false;
-    if (!CheckCollisionCircles(enemy->position, 7, target_point, radius))
+    if (enemy->current_state == ENEMY_DEAD || enemy->current_state == ENEMY_STUNNED)
         return false;
 
-    enemy->health -= 1;
-    if (enemy->health <= 0)
-    {
-        // enemy has died!
-        enemy->current_state = ENEMY_DEAD;
-        enemy->state_time_left = 0.5;
-        play_sfx(SFX_GHOST_DEFEATED);
-        return true;
-    }
+    int damage_taken = 1;
+    if (!CheckCollisionCircles(enemy->position, 8, target_point, radius))
+        return false;
+
+    // Direct hit bonus
+    if (CheckCollisionPointCircle(target_point, enemy->position, 8))
+        damage_taken += 1;
+
+    // Parry bonus
+    if (enemy->current_state == ENEMY_CHARGING)
+        damage_taken += 1;
+
+    enemy->health -= damage_taken;
 
     // enemy has been hit and stunned
-    enemy->current_state = ENEMY_STUNNED;
-    enemy->stunned_sent_to = Vector2Scale(Vector2Normalize(Vector2Subtract(from_point, enemy->position)), 32);
-    enemy->state_time_left = 2.12f;
-    play_sfx(SFX_GHOST_INJURED);
+    Vector2 knockback = Vector2Normalize(Vector2Subtract(enemy->position, target_point));
+
+    if (enemy->health <= 0)
+    {
+        enemy->current_state = ENEMY_DEAD;
+        enemy->state_time_left = 0.5f;
+        enemy->stunned_sent_to = Vector2Add(enemy->position, Vector2Scale(knockback, 200));
+        play_sfx(SFX_GHOST_DEFEATED);
+    }
+    else
+    {
+        enemy->current_state = ENEMY_STUNNED;
+        enemy->state_time_left = 0.75f * damage_taken;
+        enemy->stunned_sent_to = Vector2Add(enemy->position, Vector2Scale(knockback, 32));
+        play_sfx(SFX_GHOST_INJURED);
+    }
+
     return true;
 }
