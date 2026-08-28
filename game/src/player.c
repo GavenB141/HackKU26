@@ -6,13 +6,14 @@
 #include "dungeon.h"
 #include "sfx.h"
 
-#define HAMMER_CHARGE_TIME 1.0
-#define HAMMER_SWING_TIME  0.025
+#define HAMMER_CHARGE_TIME 0.75
+#define HAMMER_SWING_TIME  0.08
 #define HAMMER_IMPACT_TIME 0.4
 #define HAMMER_FLASH_PERIOD 0.05
-#define HAMMER_SHOCKWAVE_RADIUS 18.0
-#define HAMMER_SHOCKWAVE_DURATION 0.15
+#define HAMMER_SHOCKWAVE_RADIUS 20.0
+#define HAMMER_SHOCKWAVE_DURATION 0.17
 #define PLAYER_WALK_PERIOD 0.1
+#define PLAYER_DASH_SPEED 240.0
 
 Player* make_player() {
     Player* player = calloc(1, sizeof(Player));
@@ -74,7 +75,6 @@ void draw_player(Player* player, float dt) {
     target.height = 48;
 
     if (player->shockwave_duration > 0) {
-        player->shockwave_duration -= dt;
         float radius = HAMMER_SHOCKWAVE_RADIUS *
             ((HAMMER_SHOCKWAVE_DURATION - player->shockwave_duration) / HAMMER_SHOCKWAVE_DURATION);
         float alpha = player->shockwave_duration / HAMMER_SHOCKWAVE_DURATION;
@@ -143,17 +143,16 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
         if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT))
             vel.x += 1;
 
-        vel = Vector2Scale(
-            Vector2Normalize(vel),
-            speed);
+        vel = Vector2Scale(Vector2Normalize(vel), speed);
 
         if (player->dash_time < 0)
         {
             player->dash_time = Clamp(player->dash_time + dt, -dash_cooldown, 0);
         }
-        else if (player->hammer_charge == 0 && IsKeyPressed(KEY_LEFT_SHIFT))
+        else if (player->hammer_swing == 0 && IsKeyPressed(KEY_LEFT_SHIFT))
         {
-            player->dash_velocity = Vector2Scale(vel, 3);
+            player->hammer_charge = 0;
+            player->dash_velocity = Vector2Scale(Vector2Normalize(vel), PLAYER_DASH_SPEED);
             player->dash_time = 0.15;
         }
     }
@@ -227,7 +226,7 @@ static void move_player(Player* player, Dungeon* dungeon, float dt, float speed)
 
 static void player_hammer(Player* player, Dungeon* dungeon, float dt) {
     if (player->hammer_swing == 0) {
-        if (IsKeyDown(KEY_SPACE)) {
+        if ((player->hammer_charge && IsKeyDown(KEY_SPACE)) || IsKeyPressed(KEY_SPACE)) {
             if (player->hammer_charge < HAMMER_CHARGE_TIME && player->hammer_charge + dt >= HAMMER_CHARGE_TIME)
             {
                 play_sfx(SFX_HAMMER_READY);
@@ -254,8 +253,7 @@ static void player_hammer(Player* player, Dungeon* dungeon, float dt) {
             Vector2 center = get_player_center(player);
             player->shockwave_epicenter = Vector2Add(center, offset);
             player->shockwave_duration = HAMMER_SHOCKWAVE_DURATION;
-            if (!cast_attack(dungeon, center, player->shockwave_epicenter, HAMMER_SHOCKWAVE_RADIUS))
-                play_sfx(SFX_HAMMER_HIT);
+            play_sfx(SFX_HAMMER_HIT);
         }
     } else {
         player->hammer_impact -= dt;
@@ -268,6 +266,14 @@ static void player_hammer(Player* player, Dungeon* dungeon, float dt) {
 }
 
 void update_player(Player* player, Dungeon* dungeon, float dt) {
+    if (player->shockwave_duration > 0) {
+        player->shockwave_duration -= dt;
+        float radius = player->shockwave_duration <= 0 ?
+            HAMMER_SHOCKWAVE_RADIUS : HAMMER_SHOCKWAVE_RADIUS *
+            ((HAMMER_SHOCKWAVE_DURATION - player->shockwave_duration) / HAMMER_SHOCKWAVE_DURATION);
+        cast_attack(dungeon, player->body.position, player->shockwave_epicenter, radius);
+    };
+
     if (player->dash_time <= 0)
         player_hammer(player, dungeon, dt);
 

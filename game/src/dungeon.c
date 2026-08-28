@@ -608,7 +608,7 @@ static bool attack_tile(Dungeon *dungeon, int x, int y) {
         }
         return true;
     }
-    if (tile->type == 'k')
+    if (tile->type == 'k' && tile->meta[0] == 0)
     {
         tile->meta[0] = 1;
         play_sfx(SFX_CHEST_BREAK);
